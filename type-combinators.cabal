@@ -1,0 +1,37 @@
+name: type-combinators
+version: 0.1.0.0
+cabal-version: >=1.10
+build-type: Simple
+license: BSD3
+license-file: LICENSE
+maintainer: kylcarte@gmail.com
+author: Kyle Carter
+
+library
+    exposed-modules:
+        Data.Type.Fin
+        Data.Type.Length
+        Data.Type.Vector
+        Data.Type.Combinator
+        Data.Type.Conjunction
+        Data.Type.Disjunction
+        Data.Type.Index
+        Data.Type.Nat
+        Data.Type.Option
+        Data.Type.Product
+        Data.Type.Sum
+        Data.Type.Quantifier
+        Type.Class.HFunctor
+        Type.Class.Known
+        Type.Class.Witness
+        Type.Family.Constraint
+        Type.Family.Pair
+        Type.Family.List
+        Type.Family.Maybe
+        Type.Family.Monoid
+        Type.Family.Nat
+    build-depends:
+        base >=4.8 && <4.9
+    default-language: Haskell2010
+    hs-source-dirs: src
+
