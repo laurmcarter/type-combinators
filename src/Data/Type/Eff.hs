@@ -23,7 +23,7 @@ import Type.Family.List
 
 data Eff r a
   = Val a
-  | forall b. E (Sum' r b) (Arrs r b a)
+  | forall b. E (SumF r b) (Arrs r b a)
 
 type Arr  r a b = a -> Eff r b
 type Arrs r     = MQueue (Eff r)
@@ -58,8 +58,8 @@ instance Monad (Eff r) where
     Val a -> k a
     E u q -> E u $ q |> k
 
-send :: Elem r t => t v -> Eff r v
-send t = E (inj' t) $ tsingleton Val
+send :: (t ∈ r) => t v -> Eff r v
+send t = E (injF t) $ tsingleton Val
 
 run :: Eff Ø w -> w
 run = \case
@@ -73,49 +73,22 @@ handleRelay ret h = loop
   where
   loop = \case
     Val x -> ret x
-    E u q -> case decomp' u of
+    E u q -> case decompF u of
       Left  x -> h x k
       Right u -> E u $ tsingleton k
       where
       k = qComp q loop
 
-interpose :: Elem r t => (a -> Eff r w)
+interpose :: (t ∈ r) => (a -> Eff r w)
   -> (forall v. t v -> Arr r v w -> Eff r w)
   -> Eff r a -> Eff r w
 interpose ret h = loop
   where
   loop = \case
     Val x -> ret x
-    E u q -> case prj' u of
+    E u q -> case prjF u of
       Just x -> h x k
       _      -> E u $ tsingleton k
       where
       k = qComp q loop
-
-data Reader e v where
-  Reader :: Reader e e
-
-ask :: Elem r (Reader e) => Eff r e
-ask = send Reader
-
-runReader' :: Eff (Reader e :< r) w -> e -> Eff r w
-runReader' m e = loop m
-  where
-  loop = \case
-    Val x -> return x
-    E u q -> case decomp' u of
-      Left Reader -> loop $ qApp q e
-      Right u     -> E u $ tsingleton $ qComp q loop
-
-runReader :: Eff (Reader e :< r) w -> e -> Eff r w
-runReader m e = handleRelay return (\Reader k -> k e) m
-
-local :: forall e a r. Elem r (Reader e)
-  => (e -> e) -> Eff r a -> Eff r a
-local f m = do
-  e0 <- ask
-  let e = f e0
-  let h :: Reader e v -> Arr r v a -> Eff r a
-      h Reader g = g e
-  interpose return h m
 

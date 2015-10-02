@@ -9,6 +9,9 @@ author: Kyle Carter
 
 library
     exposed-modules:
+        Data.Type.Eff.Writer
+        Data.Type.Eff.NonDet
+        Data.Type.Eff.Reader
         Data.Type.Eff
         Data.Type.MQueue
         Data.Type.Fin

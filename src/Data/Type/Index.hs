@@ -28,6 +28,9 @@ deriving instance Eq   (Index as a)
 deriving instance Ord  (Index as a)
 deriving instance Show (Index as a)
 
+type a ∈ as = Elem as a
+infix 6 ∈
+
 class Elem (as :: [k]) (a :: k) where
   elemIndex :: Index as a
 

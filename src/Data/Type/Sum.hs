@@ -37,10 +37,10 @@ injectSum = \case
   IZ   -> InL
   IS x -> InR . injectSum x
 
-inj :: Elem as a => f a -> Sum f as
+inj :: (a ∈ as) => f a -> Sum f as
 inj = injectSum elemIndex
 
-prj :: Elem as a => Sum f as -> Maybe (f a)
+prj :: (a ∈ as) => Sum f as -> Maybe (f a)
 prj = index elemIndex
 
 index :: Index as a -> Sum f as -> Maybe (f a)
@@ -98,37 +98,37 @@ instance (Witness p q (f a), Witness p q (Sum f (b :< as))) => Witness p q (Sum 
 
 -- }}}
 
-data Sum' :: [k -> *] -> k -> * where
-  InL' :: !(f a) -> Sum' (f :< fs) a
-  InR' :: !(Sum' fs a) -> Sum' (f :< fs) a
+data SumF :: [k -> *] -> k -> * where
+  InLF :: !(f a) -> SumF (f :< fs) a
+  InRF :: !(SumF fs a) -> SumF (f :< fs) a
 
-instance ListC (Functor <$> fs) => Functor (Sum' fs) where
+instance ListC (Functor <$> fs) => Functor (SumF fs) where
   fmap f = \case
-    InL' a -> InL' $ f <$> a
-    InR' s -> InR' $ f <$> s
+    InLF a -> InLF $ f <$> a
+    InRF s -> InRF $ f <$> s
 
-decomp' :: Sum' (f :< fs) a -> Either (f a) (Sum' fs a)
-decomp' = \case
-  InL' a -> Left  a
-  InR' s -> Right s
+decompF :: SumF (f :< fs) a -> Either (f a) (SumF fs a)
+decompF = \case
+  InLF a -> Left  a
+  InRF s -> Right s
 
-inj' :: Elem fs f => f a -> Sum' fs a
-inj' = injectSum' elemIndex
+injF :: (f ∈ fs) => f a -> SumF fs a
+injF = injectSumF elemIndex
 
-prj' :: Elem fs f => Sum' fs a -> Maybe (f a)
-prj' = index' elemIndex
+prjF :: (f ∈ fs) => SumF fs a -> Maybe (f a)
+prjF = indexF elemIndex
 
-injectSum' :: Index fs f -> f a -> Sum' fs a
-injectSum' = \case
-  IZ   -> InL'
-  IS x -> InR' . injectSum' x
+injectSumF :: Index fs f -> f a -> SumF fs a
+injectSumF = \case
+  IZ   -> InLF
+  IS x -> InRF . injectSumF x
 
-index' :: Index fs f -> Sum' fs a -> Maybe (f a)
-index' = \case
+indexF :: Index fs f -> SumF fs a -> Maybe (f a)
+indexF = \case
   IZ -> \case
-    InL' a -> Just a
+    InLF a -> Just a
     _      -> Nothing
   IS x -> \case
-    InR' s -> index' x s
+    InRF s -> indexF x s
     _      -> Nothing
 
