@@ -17,7 +17,6 @@ module Data.Type.Index where
 
 import Type.Class.HFunctor
 import Type.Class.Known
-
 import Type.Family.List
 import Type.Family.Nat
 
