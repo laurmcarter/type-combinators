@@ -44,6 +44,11 @@ data VT (n :: N) (f :: k -> *) :: k -> * where
   (:*) :: !(f a) -> !(VT n f a) -> VT (S n) f a
 infixr 4 :*
 
+type V n = VT n I
+pattern (:+) :: a -> V n a -> V (S n) a
+pattern a :+ as = I a :* as
+infixr 4 :+
+
 deriving instance Eq   (f a) => Eq   (VT n f a)
 deriving instance Ord  (f a) => Ord  (VT n f a)
 deriving instance Show (f a) => Show (VT n f a)
@@ -61,8 +66,6 @@ vrep a = go (known :: Nat n)
   go = \case
     Z_   -> ØV
     S_ x -> a :* go x
-
-type V n = VT n I
 
 head' :: VT (S n) f a -> f a
 head' (a :* _) = a
