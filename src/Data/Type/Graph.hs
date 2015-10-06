@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
@@ -154,6 +155,16 @@ onNeighbors f = Neighbors . f . neighborMap
 onAssocs :: Ord c => ([(a,b)] -> [(c,d)]) -> Map a b -> Map c d
 onAssocs f = M.fromList . f . M.assocs
 
+{-
+nDepthFirst :: forall f a b. (Applicative f, Ord a, Ord b) => (a -> f b) -> Neighbors a a -> f (Neighbors b b)
+nDepthFirst f = fmap Neighbors . flip go id . neighborMap
+  where
+  go :: Map a (Set a) -> (Either f (Map b (Set b)) -> r) -> r
+  go m k = case M.minViewWithKey m of
+    Nothing          -> k $ pure M.empty
+    Just ((a,as),m') -> _
+-}
+
 nMapDom :: Ord b => (a -> b) -> Neighbors a c -> Neighbors b c
 nMapDom = onNeighbors . M.mapKeys
 
@@ -191,6 +202,7 @@ neighborhood a n = go (S.singleton a) a
     where
     as = neighbors a n S.\\ acc
 
+{-
 nSCC :: forall a. Ord a => Neighbors a a -> Set (Set a)
 nSCC n = vs `bindSet` go
   where
@@ -199,6 +211,7 @@ nSCC n = vs `bindSet` go
   go a = _
     where
     as = neighborhood a n
+-}
 
 -- }}}
 
