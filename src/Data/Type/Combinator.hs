@@ -24,7 +24,7 @@ import Control.Applicative
 -- (:.:) {{{
 
 data ((f :: l -> *) :.: (g :: k -> l)) :: k -> * where
-  Comp :: f (g a) -> (f :.: g) a
+  Comp :: { getComp :: f (g a) } -> (f :.: g) a
 infixr 6 :.:
 
 deriving instance Eq   (f (g a)) => Eq   ((f :.: g) a)

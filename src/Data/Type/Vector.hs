@@ -73,6 +73,14 @@ head' (a :* _) = a
 tail' :: VT (S n) f a -> VT n f a
 tail' (_ :* as) = as
 
+onTail :: (VT m f a -> VT n f a) -> VT (S m) f a -> VT (S n) f a
+onTail f (a :* as) = a :* f as
+
+vDel :: Fin n -> VT n f a -> VT (Pred n) f a
+vDel = \case
+  FZ   -> tail'
+  FS x -> onTail (vDel x) \\ x
+
 imap :: (Fin n -> f a -> g b) -> VT n f a -> VT n g b
 imap f = \case
   ØV      -> ØV

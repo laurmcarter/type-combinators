@@ -23,6 +23,9 @@ data Some (f :: k -> *) :: * where
 some :: Some f -> (forall a. f a -> r) -> r
 some (Some a) f = f a
 
+withSome :: (forall a. f a -> r) -> Some f -> r
+withSome f (Some a) = f a
+
 type Some2 f = Some (Some :.: f)
 
 pattern Some2 :: f a b -> Some2 f

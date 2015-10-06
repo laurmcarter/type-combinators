@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
@@ -47,6 +48,12 @@ class WitnessC p q t => Witness (p :: Constraint) (q :: Constraint) (t :: *) | t
   type WitnessC p q t = ØC
   (\\) :: p => (q => r) -> t -> r
 infixl 1 \\
+
+entailed :: Witness p q t => t -> p :- q
+entailed t = Sub (Wit \\ t)
+
+witnessed :: Witness ØC q t => t -> Wit q
+witnessed t = Wit \\ t
 
 instance Witness ØC c (Wit c) where
   r \\ Wit = r
