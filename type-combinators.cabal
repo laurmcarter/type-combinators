@@ -9,7 +9,6 @@ author: Kyle Carter
 
 library
     exposed-modules:
-        Search
         Data.Type.Graph
         Data.Type.Fin
         Data.Type.Eff.Writer

@@ -8,30 +8,91 @@ module Search where
 import Control.Monad.Trans.Cont
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
-import Data.Tree
+import Data.Sequence (Seq,ViewL(..),ViewR(..))
+import qualified Data.Sequence as S
+-- import Data.Type.Vector
+-- import Data.Type.Quantifier
+-- import Type.Family.Nat
 
-t0 :: Tree Int
-t0 = Node 0
-  [ Node 1
-    [ Node 4 [ leaf 8 , leaf 9 ]
-    , leaf 5
-    ]
-  , leaf 2
-  , Node 3
-    [ Node 6 [ leaf 10 ]
-    , leaf 7
-    ]
-  ]
+data Bin a
+  = Empty
+  | Branch a (Bin a) (Bin a)
+  deriving (Eq,Ord,Show)
 
-leaf :: a -> Tree a
-leaf a = Node a []
+instance Functor Bin where
+  fmap f = \case
+    Empty -> Empty
+    Branch a l r -> Branch (f a) (f <$> l) (f <$> r)
 
-{-
-bfs :: Tree a -> [a]
-bfs tr = go tr id []
+b0 :: Bin Int
+b0 = Branch 1
+  ( Branch 2
+    ( Branch 3
+      ( Branch 4 Empty
+        ( Branch 5 Empty Empty
+        )
+      )
+      ( Branch 6
+        ( Branch 7 Empty Empty
+        )
+        Empty
+      )
+    )
+    Empty
+  )
+  ( Branch 8
+    ( Branch 9 Empty Empty
+    )
+    ( Branch 10 Empty
+      ( Branch 11 Empty Empty
+      )
+    )
+  )
+
+printBin :: Show a => Bin a -> IO ()
+printBin = putStrLn . unlines . draw . fmap show
+
+draw :: Bin String -> [String]
+draw = \case
+  Empty -> ["*"]
+  Branch s l r -> s : drawSubs [l,r]
   where
-  go :: Tree a -> ([a] -> r) -> [a] -> r
-  go (Node a ts) k acc = case ts of
-    [] -> 
--}
+  drawSubs = \case
+    []   -> []
+    [t]  -> "|" : shift "`- " "   " (draw t)
+    t:ts -> "|" : shift "+- " "|  " (draw t) ++ drawSubs ts
+  shift first other = zipWith (++) (first : repeat other)
+
+bfn :: Int -> Seq (Bin a) -> Seq (Bin Int)
+bfn i s = case S.viewl s of
+  EmptyL             -> S.empty
+  Empty        :< s' -> Empty S.<| bfn i s'
+  Branch _ l r :< s' -> case S.viewr res of
+    res' :> r' -> case S.viewr res' of
+      res'' :> l' -> Branch i l' r' S.<| res''
+      _ -> error "missing 1"
+    _ -> error "missing 2"
+    where
+    res = bfn (i+1) $ s' S.|> l S.|> r
+
+bfnM :: Monad m => (a -> m b) -> Seq (Bin a) -> m (Seq (Bin b))
+bfnM f s = case S.viewl s of
+  EmptyL             -> return S.empty
+  Empty        :< s' -> (Empty S.<|) <$> bfnM f s'
+  Branch a l r :< s' -> do
+    b <- f a
+    res <- bfnM f $ s' S.|> l S.|> r
+    case S.viewr res of
+      res' :> r' -> case S.viewr res' of
+        res'' :> l' -> return $ Branch b l' r' S.<| res''
+        _ -> fail "missing 1"
+      _ -> fail "missing 2"
+
+(||>) :: Foldable f => Seq a -> f a -> Seq a
+(||>) = foldl (S.|>)
+infixl 5 ||>
+
+(<||) :: Foldable f => f a -> Seq a -> Seq a
+(<||) = flip $ foldr (S.<|)
+infixr 5 <||
 

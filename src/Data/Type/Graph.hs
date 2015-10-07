@@ -7,6 +7,7 @@
 
 module Data.Type.Graph where
 
+import Data.Type.Combinator (getI)
 import Data.Type.Fin
 import Data.Type.Vector
 import Type.Family.Nat
@@ -27,6 +28,15 @@ data Graph n a = Graph
   { gVertices :: V n a
   , gEdges    :: Edges (Fin n)
   }
+
+instance Functor (Graph n) where
+  fmap = onVertices . fmap
+
+instance Foldable (Graph n) where
+  foldMap f = foldMap f . gVertices
+
+instance Traversable (Graph n) where
+  traverse f (Graph vs es) = Graph <$> traverse f vs <*> pure es
 
 type Edges a = Neighbors a a
 
@@ -54,6 +64,14 @@ infix 8 ~>
 x ~~ y = (x ~> y) . (y ~> x)
 infix 8 ~~
 {-# INLINE (~~) #-}
+
+gFoldMap :: Monoid m => (a -> m) -> (a -> a -> m) -> Graph n a -> m
+gFoldMap v e (Graph vs es) = foldMap v vs <> nFoldMap goE es
+  where
+  goE x y = e (getI $ index x vs) (getI $ index y vs)
+
+gTranspose :: Graph n a -> Graph n a
+gTranspose = onEdges nTranspose
 
 gInsVert :: a -> Graph n a -> Graph (S n) a
 gInsVert v (Graph vs es) = Graph (v :+ vs) $ nMap FS FS es
@@ -95,6 +113,9 @@ nEdges = S.fromList . go . M.assocs . neighborMap
     , b <- S.toList bs
     ]
 
+nFoldMap :: forall a b m. Monoid m => (a -> b -> m) -> Neighbors a b -> m
+nFoldMap f = M.foldMapWithKey (foldMap . f) . neighborMap
+
 neighbors :: Ord a => a -> Neighbors a b -> Set b
 neighbors a = fromMaybe S.empty . M.lookup a . neighborMap
 
@@ -121,8 +142,8 @@ nFromEdges ps = nFromEdgesVerts ps []
 nFromEdgeLists :: (Ord a, Ord b) => [(a,[b])] -> Neighbors a b
 nFromEdgeLists = Neighbors . M.fromList . map (second S.fromList)
 
-nReverse :: (Ord a, Ord b) => Neighbors a b -> Neighbors b a
-nReverse = onNeighbors $ onAssocs go
+nTranspose :: (Ord a, Ord b) => Neighbors a b -> Neighbors b a
+nTranspose = onNeighbors $ onAssocs go
   where
   go ps = map getRev bs
     where
@@ -251,6 +272,10 @@ bindSet as f = S.unions $ map f $ S.toList as
 
 mapFilter :: Foldable f => (a -> Maybe b) -> f a -> [b]
 mapFilter f = foldMap $ maybeToList . f
+
+(&) :: a -> (a -> b) -> b
+a & f = f a
+infixl 1 &
 
 -- }}}
 
