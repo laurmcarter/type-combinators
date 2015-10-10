@@ -12,6 +12,28 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Product
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Type combinators for type-level lists,
+-- lifting @(f :: k -> *)@ to @(Prod f :: [k] -> *)@,
+-- as well as its constructions, manipulations, and
+-- eliminations.
+--
+-- 'Prod' is similar in nature to a few others in the Haskell ecosystem, such as:
+--
+-- Oleg's 'HList', from <http://hackage.haskell.org/package/HList>, and
+-- 
+-- Kenneth Foner's 'ConicList', from <http://hackage.haskell.org/package/IndexedList-0.1.0.1/docs/Data-List-Indexed-Conic.html>.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Product where
 

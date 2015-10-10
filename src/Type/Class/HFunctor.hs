@@ -12,10 +12,25 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Class.HFunctor
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Higher order functors, foldables, and traversables,
+-- along with their indexed variants.
+-- (oh, and bifunctors tacked on for good measure.)
+----------------------------------------------------------------------------
 
 module Type.Class.HFunctor where
 
 class HFunctor (t :: (k -> *) -> l -> *) where
+  -- | Take a natural transformation to a lifted natural transformation.
   map' :: (forall (a :: k). f a -> g a) -> t f b -> t g b
 
 class HIxFunctor (i :: l -> k -> *) (t :: (k -> *) -> l -> *) | t -> i where

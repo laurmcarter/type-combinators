@@ -12,6 +12,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Index
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A @singleton@-esque type for representing indices in a type-level list.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Index where
 
@@ -21,7 +34,9 @@ import Type.Family.List
 import Type.Family.Nat
 
 data Index :: [k] -> k -> * where
+  -- | Indexes the head of the list.
   IZ :: Index (a :< as) a
+  -- | Indexes into the tail of the list.
   IS :: !(Index as a) -> Index (b :< as) a
 
 deriving instance Eq   (Index as a)

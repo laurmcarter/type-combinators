@@ -12,6 +12,23 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Conjunction
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Two type combinators for working with conjunctions:
+-- A /fanout/ combinator '(:&:)', and a /par/ combinator '(:*:)'.
+--
+-- These are analogous to '(&&&)' and '(***)' from 'Control.Arrow',
+-- respectively.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Conjunction where
 

@@ -10,6 +10,7 @@ author: Kyle Carter
 library
     exposed-modules:
         Data.Type.Graph
+        Data.Type.Graph.Finite
         Data.Type.Fin
         Data.Type.Eff.Writer
         Data.Type.Eff.NonDet

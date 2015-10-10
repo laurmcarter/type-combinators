@@ -12,6 +12,18 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Family.Maybe
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Convenient type families for working with type-level @Maybe@s.
+----------------------------------------------------------------------------
 
 module Type.Family.Maybe
   ( module Type.Family.Maybe
@@ -23,10 +35,12 @@ import Type.Family.Monoid
 
 import Data.Type.Equality
 
+-- | Take a @Maybe Constraint@ to a @Constraint@.
 type family MaybeC (mc :: Maybe Constraint) :: Constraint where
   MaybeC Nothing  = ØC
   MaybeC (Just c) = c
 
+-- | Map over a type-level @Maybe@.
 type family (f :: k -> l) <$> (a :: Maybe k) :: Maybe l where
   f <$> Nothing = Nothing
   f <$> Just a  = Just (f a)

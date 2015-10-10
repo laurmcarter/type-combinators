@@ -12,6 +12,22 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Sum
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- 'Sum' and 'SumF' are type combinators for representing disjoint sums of
+-- indices @(as :: [k])@ of a single functor @(f :: k -> *), or of
+-- many functors @(fs :: [k -> *])@ at a single index @(a :: k)@,
+-- respectively.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Sum where
 

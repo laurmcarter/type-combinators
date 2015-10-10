@@ -12,6 +12,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Family.List
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Convenient aliases and type families for working with
+-- type-level lists.
+----------------------------------------------------------------------------
 
 module Type.Family.List
   ( module Type.Family.List
@@ -28,13 +41,16 @@ type Ø    = '[]
 type (:<) = '(:)
 infixr 5 :<
 
+-- | Type-level singleton list.
 type Only a = '[a]
 
+-- | Appends two type-level lists.
 type family (as :: [k]) ++ (bs :: [k]) :: [k] where
   Ø         ++ bs = bs
   (a :< as) ++ bs = a :< (as ++ bs)
 infixr 5 ++
 
+-- | Type-level list snoc.
 type family (as :: [k]) >: (a :: k) :: [k] where
   Ø         >: a = Only a
   (b :< as) >: a = b :< (as >: a)
@@ -52,15 +68,22 @@ type family Last' (a :: k) (as :: [k]) :: k where
   Last' a Ø         = a
   Last' a (b :< as) = Last' b as
 
+-- | Takes a type-level list of 'Constraint's to a single
+-- 'Constraint', where @ListC cs@ holds iff all elements
+-- of @cs@ hold.
 type family ListC (cs :: [Constraint]) :: Constraint where
   ListC  Ø        = ØC
   ListC (c :< cs) = (c, ListC cs)
 
+-- | Map an @(f :: k -> l)@ over a type-level list @(as :: [k])@,
+-- giving a list @(bs :: [l])@.
 type family (f :: k -> l) <$> (a :: [k]) :: [l] where
   f <$> Ø         = Ø
   f <$> (a :< as) = f a :< (f <$> as)
 infixr 4 <$>
 
+-- | Map a list of @(fs :: [k -> l])@ over a single @(a :: k)@,
+-- giving a list @(bs :: [l])@.
 type family (f :: [k -> l]) <&> (a :: k) :: [l] where
   Ø         <&> a = Ø
   (f :< fs) <&> a = f a :< (fs <&> a)

@@ -12,6 +12,20 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Length
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A @singleton@-esque type for representing lengths of type-level lists,
+-- irrespective of the actual types in that list.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Length where
 

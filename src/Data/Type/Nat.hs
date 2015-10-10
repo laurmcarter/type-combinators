@@ -12,6 +12,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Nat
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A @singleton@-esque type for representing Peano natural numbers.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Nat where
 
@@ -31,13 +44,18 @@ deriving instance Eq   (Nat n)
 deriving instance Ord  (Nat n)
 deriving instance Show (Nat n)
 
+-- | @'Z_'@ is the canonical construction of a @'Nat' Z@.
 instance Known Nat Z where
   known = Z_
 
+-- | If @n@ is a canonical construction of @Nat n@,
+-- @'S_' n@ is the canonical construction of @Nat (S n)@.
 instance Known Nat n => Known Nat (S n) where
   type KnownC Nat (S n) = Known Nat n
   known = S_ known
 
+-- | A @Nat n@ is a 'Witness' that there is a canonical
+-- construction for @Nat n@.
 instance Witness ØC (Known Nat n) (Nat n) where
   (\\) r = \case
     Z_   -> r
@@ -73,6 +91,8 @@ _s Refl = Refl
 _ZneS :: Z :~: S x -> Void
 _ZneS = impossible
 
+-- | A proof that 'Z' is also a right identity
+-- for the addition of type-level 'Nat's.
 addZ :: Nat x -> (x + Z) :~: x
 addZ = \case
   Z_   -> Refl

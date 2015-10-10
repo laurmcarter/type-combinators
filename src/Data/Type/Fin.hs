@@ -14,6 +14,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Fin
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A @singleton@-esque type for representing members of finite sets.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Fin where
 
@@ -33,6 +46,7 @@ deriving instance Eq   (Fin n)
 deriving instance Ord  (Fin n)
 deriving instance Show (Fin n)
 
+-- | Gives the list of all members of the finite set of size @n@.
 fins :: Nat n -> [Fin n]
 fins = \case
   Z_   -> []
@@ -43,6 +57,7 @@ fin = \case
   FZ   -> 0
   FS x -> succ $ fin x
 
+-- | There are no members of @Fin Z@.
 finZ :: Fin Z -> Void
 finZ = impossible
 
@@ -51,6 +66,8 @@ weaken = \case
   FZ   -> FZ
   FS n -> FS $ weaken n
 
+-- | Map a finite set to a lower finite set without
+-- one of its members.
 without :: Fin n -> Fin n -> Maybe (Fin (Pred n))
 without = \case
   FZ -> \case
@@ -80,11 +97,15 @@ instance Known Nat n => Known ([] :.: Fin) n where
       S_ x -> FZ : map FS (go x)
 -}
 
+-- | Take a 'Fin' to an existentially quantified 'Nat'.
 finNat :: Fin x -> Some Nat
 finNat = \case
   FZ   -> Some Z_
   FS x -> withSome (Some . S_) $ finNat x
 
+-- | A @Fin n@ is a 'Witness' that @n >= 1@.
+--
+-- That is, @'Pred' n@ is well defined.
 instance (n' ~ Pred n) => Witness ØC (S n' ~ n) (Fin n) where
   type WitnessC ØC (S n' ~ n) (Fin n) = (n' ~ Pred n)
   (\\) r = \case

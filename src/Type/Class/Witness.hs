@@ -13,6 +13,23 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Class.Witness
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A type @t@ that is a @'Witness' p q t@ provides a 'Constraint' entailment
+-- of @q@, given that @p@ holds.
+--
+-- The 'Witness' class uses an associated 'Constraint' @WitnessC@ to
+-- maintain backwards inference of 'Witness' instances with respect
+-- to type refinement. See the 'Known' class for more information.
+----------------------------------------------------------------------------
 
 module Type.Class.Witness
   ( module Type.Class.Witness
@@ -29,12 +46,22 @@ import Prelude hiding (id,(.))
 import Control.Category
 import Unsafe.Coerce
 
+-- | A reified 'Constraint'.
 data Wit :: Constraint -> * where
   Wit :: c => Wit c
 
 data Wit1 :: (k -> Constraint) -> k -> * where
   Wit1 :: c a => Wit1 c a
 
+-- | Reified evidence of 'Constraint' entailment.
+--
+-- Given a term of @p :- q@, the Constraint @q@ holds
+-- if @p@ holds.
+--
+-- Entailment of 'Constraint's form a 'Category':
+--
+-- >>> id  :: p :- p
+-- >>> (.) :: (q :- r) -> (p :-> q) -> (p :- r)
 data (:-) :: Constraint -> Constraint -> * where
   Sub :: { getSub :: p => Wit q } -> p :- q
 infixr 4 :-
@@ -43,31 +70,46 @@ instance Category (:-) where
   id              = Sub Wit
   Sub bc . Sub ab = Sub $ bc \\ ab
 
+-- | A general eliminator for entailment.
+--
+-- Given a term of type @t@ with an instance @Witness p q t@
+-- and a term of type @r@ that depends on 'Constraint' @q@,
+-- we can reduce the Constraint to @p@.
+--
+-- If @p@ is @ØC@, i.e. the empty 'Constraint' @()@, then
+-- a Witness @t@ can completely discharge the Constraint @q@.
 class WitnessC p q t => Witness (p :: Constraint) (q :: Constraint) (t :: *) | t -> p q where
   type WitnessC p q t :: Constraint
   type WitnessC p q t = ØC
   (\\) :: p => (q => r) -> t -> r
 infixl 1 \\
 
+-- | Convert a 'Witness' to a canonical reified entailment.
 entailed :: Witness p q t => t -> p :- q
 entailed t = Sub (Wit \\ t)
 
+-- | Convert a 'Witness' to a canonical reified 'Constraint'.
 witnessed :: Witness ØC q t => t -> Wit q
 witnessed t = Wit \\ t
 
 instance Witness ØC c (Wit c) where
   r \\ Wit = r
 
+-- | An entailment @p :- q@ is a Witness of @q@, given @p@.
 instance Witness p q (p :- q) where
   r \\ Sub Wit = r
 
+-- | A type equality @a ':~:' b@ is a Witness that @(a ~ b)@.
 instance Witness ØC (a ~ b) (a :~: b) where
   r \\ Refl = r
 
+-- | If the constraint @c@ holds, there is a canonical construction
+-- for a term of type @'Wit' c@, viz. the constructor @Wit@.
 instance c => Known Wit c where
   type KnownC Wit c = c
   known = Wit
 
+-- | Constraint chaining under @Maybe@.
 (/?) :: (Witness p q t, p) => Maybe t -> (q => Maybe r) -> Maybe r
 (/?) = \case
   Just t -> (\\ t)

@@ -12,6 +12,20 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Option
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A type combinator for type-level @Maybe@s,
+-- lifting @(f :: k -> *)@ to @(Option f :: Maybe k -> *)@.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Option where
 
@@ -24,11 +38,14 @@ data Option (f :: k -> *) :: Maybe k -> * where
   Nothing_ :: Option f Nothing
   Just_    :: !(f a) -> Option f (Just a)
 
+-- | Eliminator for @'Option' f@.
 option :: (forall a. (m ~ Just a) => f a -> r) -> ((m ~ Nothing) => r) -> Option f m -> r
 option j n = \case
   Just_ a  -> j a
   Nothing_ -> n
 
+-- | We can take a natural transformation of @(forall x. f x -> g x)@ to
+-- a natural transformation of @(forall mx. 'Option' f mx -> 'Option' g mx)@.
 instance HFunctor Option where
   map' f = \case
     Just_ a  -> Just_ $ f a

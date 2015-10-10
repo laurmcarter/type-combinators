@@ -15,10 +15,30 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Vector
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- 'V' and its combinator analog 'VT' represent lists
+-- of known length, characterized by the index @(n :: N)@ in
+-- @'V' n a@ or @'VT' n f a@.
+--
+-- The classic example used ad nauseum for type-level programming.
+--
+-- The operations on 'V' and 'VT' correspond to the type level arithmetic
+-- operations on the kind 'N'.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Vector where
 
-import Data.Type.Combinator (I(..))
+import Data.Type.Combinator
 import Data.Type.Fin
 import Data.Type.Length
 import Data.Type.Nat
@@ -129,6 +149,24 @@ vfoldMap f = \case
   ØV      -> mempty
   a :* as -> f a <> vfoldMap f as
 
+withVT :: [f a] -> (forall n. VT n f a -> r) -> r
+withVT as k = case as of
+  []     -> k ØV
+  a : as -> withVT as $ \v -> k $ a :* v
+
+withV :: [a] -> (forall n. V n a -> r) -> r
+withV as k = withVT (I <$> as) k
+
+findV :: Eq a => a -> V n a -> Maybe (Fin n)
+findV = findVT . I
+
+findVT :: Eq (f a) => f a -> VT n f a -> Maybe (Fin n)
+findVT a = \case
+  ØV      -> Nothing
+  b :* as -> if a == b
+    then Just FZ
+    else FS <$> findVT a as
+
 instance Functor f => Functor (VT n f) where
   fmap = vmap . fmap
 
@@ -149,11 +187,18 @@ instance Traversable f => Traversable (VT n f) where
     ØV      -> pure ØV
     a :* as -> (:*) <$> traverse f a <*> traverse f as
 
+{-
 instance (Witness p q (f a), n ~ S x) => Witness p q (VT n f a) where
   type WitnessC p q (VT n f a) = Witness p q (f a)
   (\\) r = \case
     a :* _ -> r \\ a
     _      -> error "impossible type"
+-}
+
+instance Witness ØC (Known Nat n) (VT n f a) where
+  (\\) r = \case
+    ØV      -> r
+    _ :* as -> r \\ as
 
 instance (Num (f a), Known Nat n) => Num (VT n f a) where
   (*)         = vap (*)

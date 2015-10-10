@@ -12,6 +12,20 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Family.Pair
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Type-level pairs, along with some convenient aliases and type families
+-- over them.
+--
+-----------------------------------------------------------------------------
 
 module Type.Family.Pair where
 
@@ -38,6 +52,7 @@ type family (f :: (m,k -> l)) <*> (a :: (m,k)) :: (m,l) where
   (r#f) <*> (s#a) = (r <> s) # f a
 infixr 4 <*>
 
+-- | A type-level pair is a Monoid over its pairwise components.
 type instance Mempty = Mempty # Mempty
 type instance (r#a) <> (s#b) = (r <> s) # (a <> b)
 

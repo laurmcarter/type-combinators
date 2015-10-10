@@ -12,6 +12,20 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Family.Nat
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Type-level natural numbers, along with frequently used
+-- type families over them.
+--
+-----------------------------------------------------------------------------
 
 module Type.Family.Nat
   ( module Type.Family.Nat
@@ -55,6 +69,7 @@ type family (x :: N) ^ (y :: N) :: N where
   x ^ S y = (x ^ y) * x
 infixl 8 ^
 
+-- | Convenient aliases for low-value Peano numbers.
 type N0  = Z
 type N1  = S N0
 type N2  = S N1

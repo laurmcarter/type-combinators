@@ -12,6 +12,22 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Type.Combinator
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- A collection of simple type combinators,
+-- such as @Identity@ 'I', @Constant@ 'C', @Compose@ '(:.:)',
+-- left unnest 'LL', right unnest 'RR', the @S Combinator@ 'SS',
+-- etc.
+--
+-----------------------------------------------------------------------------
 
 module Data.Type.Combinator where
 
@@ -258,6 +274,25 @@ instance Witness p q (f a a) => Witness p q (Join f a) where
   type WitnessC p q (Join f a) = Witness p q (f a a)
   r \\ Join a = r \\ a
   
+
+-- }}}
+
+-- Flip {{{
+
+newtype Flip p b a = Flip
+  { getFlip :: p a b
+  } deriving (Eq,Ord,Show)
+
+instance Known (p a) b => Known (Flip p b) a where
+  type KnownC (Flip p b) a = Known (p a) b
+  known = Flip known
+
+instance Witness p q (f a b) => Witness p q (Flip f b a) where
+  type WitnessC p q (Flip f b a) = Witness p q (f a b)
+  r \\ Flip a = r \\ a
+
+flipped :: (f a b -> g c d) -> Flip f b a -> Flip g d c
+flipped f = Flip . f . getFlip
 
 -- }}}
 

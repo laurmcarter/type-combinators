@@ -12,6 +12,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Type.Family.Constraint
+-- Copyright   :  Copyright (C) 2015 Kyle Carter
+-- License     :  BSD3
+--
+-- Maintainer  :  Kyle Carter <kylcarte@indiana.edu>
+-- Stability   :  experimental
+-- Portability :  RankNTypes
+--
+-- Reexports the kind 'GHC.Exts.Constraint', as well as some
+-- conveniences for working with 'Constraint's.
+----------------------------------------------------------------------------
 
 module Type.Family.Constraint
   ( module Type.Family.Constraint
@@ -20,6 +33,7 @@ module Type.Family.Constraint
 
 import GHC.Exts (Constraint)
 
+-- | The empty 'Constraint'.
 type ØC = (() :: Constraint)
 
 class IffC b t f => Iff (b :: Bool) (t :: Constraint) (f :: Constraint) where
