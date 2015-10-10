@@ -29,6 +29,13 @@
 -- The 'Witness' class uses an associated 'Constraint' @WitnessC@ to
 -- maintain backwards inference of 'Witness' instances with respect
 -- to type refinement. See the 'Known' class for more information.
+--
+-- Heavily inspired by ekmett's constraints library:
+-- <http://hackage.haskell.org/package/constraints>
+--
+-- The code provided here does not /quite/ subsume the @constraints@
+-- library, as we do not give classes and instances for representing
+-- the standard library's class heirarchy and instance definitions.
 ----------------------------------------------------------------------------
 
 module Type.Class.Witness
