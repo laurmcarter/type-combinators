@@ -22,10 +22,9 @@
 -- Stability   :  experimental
 -- Portability :  RankNTypes
 --
--- 'Sum' and 'SumF' are type combinators for representing disjoint sums of
--- indices @(as :: [k])@ of a single functor @(f :: k -> *), or of
--- many functors @(fs :: [k -> *])@ at a single index @(a :: k)@,
--- respectively.
+-- 'Sum' is a type combinators for representing disjoint sums of
+-- indices @(as :: [k])@ of a single functor @(f :: k -> *).
+-- Contrast to the many-functors-one-index 'FSum'
 --
 -----------------------------------------------------------------------------
 
@@ -42,6 +41,10 @@ import Type.Family.List
 data Sum (f :: k -> *) :: [k] -> * where
   InL :: !(f a) -> Sum f (a :< as)
   InR :: !(Sum f as) -> Sum f (a :< as)
+
+-- | There are no possible values of the type @Sum f Ø@.
+nilSum :: Sum f Ø -> Void
+nilSum = impossible
 
 decomp :: Sum f (a :< as) -> Either (f a) (Sum f as)
 decomp = \case
@@ -113,38 +116,4 @@ instance (Witness p q (f a), Witness p q (Sum f (b :< as))) => Witness p q (Sum 
     InR s -> r \\ s
 
 -- }}}
-
-data SumF :: [k -> *] -> k -> * where
-  InLF :: !(f a) -> SumF (f :< fs) a
-  InRF :: !(SumF fs a) -> SumF (f :< fs) a
-
-instance ListC (Functor <$> fs) => Functor (SumF fs) where
-  fmap f = \case
-    InLF a -> InLF $ f <$> a
-    InRF s -> InRF $ f <$> s
-
-decompF :: SumF (f :< fs) a -> Either (f a) (SumF fs a)
-decompF = \case
-  InLF a -> Left  a
-  InRF s -> Right s
-
-injF :: (f ∈ fs) => f a -> SumF fs a
-injF = injectSumF elemIndex
-
-prjF :: (f ∈ fs) => SumF fs a -> Maybe (f a)
-prjF = indexF elemIndex
-
-injectSumF :: Index fs f -> f a -> SumF fs a
-injectSumF = \case
-  IZ   -> InLF
-  IS x -> InRF . injectSumF x
-
-indexF :: Index fs f -> SumF fs a -> Maybe (f a)
-indexF = \case
-  IZ -> \case
-    InLF a -> Just a
-    _      -> Nothing
-  IS x -> \case
-    InRF s -> indexF x s
-    _      -> Nothing
 

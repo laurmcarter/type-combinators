@@ -9,14 +9,14 @@ author: Kyle Carter
 
 library
     exposed-modules:
-        Data.Type.Graph
-        Data.Type.Graph.Finite
-        Data.Type.Fin
-        Data.Type.Eff.Writer
-        Data.Type.Eff.NonDet
-        Data.Type.Eff.Reader
-        Data.Type.Eff
-        Data.Type.MQueue
+        -- Data.Type.Graph
+        -- Data.Type.Graph.Finite
+        -- Data.Type.Fin
+        -- Data.Type.Eff.Writer
+        -- Data.Type.Eff.NonDet
+        -- Data.Type.Eff.Reader
+        -- Data.Type.Eff
+        -- Data.Type.MQueue
         Data.Type.Length
         Data.Type.Vector
         Data.Type.Combinator
@@ -26,7 +26,9 @@ library
         Data.Type.Nat
         Data.Type.Option
         Data.Type.Product
+        Data.Type.Product.Dual
         Data.Type.Sum
+        Data.Type.Sum.Dual
         Data.Type.Quantifier
         Type.Class.HFunctor
         Type.Class.Known

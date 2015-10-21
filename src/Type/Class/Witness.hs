@@ -77,6 +77,9 @@ instance Category (:-) where
   id              = Sub Wit
   Sub bc . Sub ab = Sub $ bc \\ ab
 
+type (:-:) = Bij (:-)
+infixr 4 :-:
+
 -- | A general eliminator for entailment.
 --
 -- Given a term of type @t@ with an instance @Witness p q t@
@@ -159,6 +162,7 @@ instance Category p => Category (Bij p) where
   id    = Bij id id
   g . f = Bij (fwd g . fwd f) (bwd f . bwd g)
 
+{-
 class Category c => Monoidal (c :: k -> k -> *) where
   type Tensor c :: k -> k -> k
   type Unit   c :: k
@@ -193,6 +197,7 @@ instance (Symmetric p, Monoidal p) => Monoidal (Bij p) where
 (***) :: Monoidal p => Bij p a b -> Bij p c d -> Bij p (Tensor p a c) (Tensor p b d)
 f *** g = (fwd f .*. fwd g) <-> (bwd f .*. bwd g)
 infixr 3 ***
+-}
 
 type (<->) = Bij (->)
 infixr 5 <->

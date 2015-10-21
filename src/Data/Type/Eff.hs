@@ -17,13 +17,13 @@
 module Data.Type.Eff where
 
 import Data.Type.Index
-import Data.Type.Sum
+import Data.Type.Sum.Dual
 import Data.Type.MQueue
 import Type.Family.List
 
 data Eff r a
   = Val a
-  | forall b. E (SumF r b) (Arrs r b a)
+  | forall b. E (FSum r b) (Arrs r b a)
 
 type Arr  r a b = a -> Eff r b
 type Arrs r     = MQueue (Eff r)

@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -37,7 +38,7 @@
 
 module Data.Type.Product where
 
-import Data.Type.Combinator ((:.:)(..),IT(..))
+import Data.Type.Combinator ((:.:)(..),IT(..),I(..))
 import Data.Type.Index
 import Data.Type.Length
 import Type.Class.HFunctor
@@ -46,17 +47,37 @@ import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.List
 
+import Control.Arrow ((&&&))
+
 data Prod (f :: k -> *) :: [k] -> * where
   Ø    :: Prod f Ø
   (:<) :: !(f a) -> !(Prod f as) -> Prod f (a :< as)
 infixr 5 :<
 
+-- | Construct a two element Prod.
+--   Since the precedence of (:>) is higher than (:<),
+--   we can conveniently write lists like:
+--
+--   >>> a :< b :> c
+--
+--   Which is identical to:
+--
+--   >>> a :< b :< c :< Ø
+--
 pattern (:>) :: (f :: k -> *) (a :: k) -> f (b :: k) -> Prod f '[a,b]
 pattern a :> b = a :< b :< Ø
 infix 6 :>
 
+-- | Build a singleton Prod.
 only :: f a -> Prod f '[a]
 only = (:< Ø)
+
+-- | snoc function. insert an element at the end of the list.
+(>:) :: Prod f as -> f a -> Prod f (as >: a)
+(>:) = \case
+  Ø       -> only
+  b :< as -> (b :<) . (as >:)
+infixl 6 >:
 
 head' :: Prod f (a :< as) -> f a
 head' (a :< _) = a
@@ -64,31 +85,50 @@ head' (a :< _) = a
 tail' :: Prod f (a :< as) -> Prod f as
 tail' (_ :< as) = as
 
-(>:) :: Prod f as -> f a -> Prod f (as >: a)
-(>:) = \case
-  Ø       -> only
-  b :< as -> (b :<) . (as >:)
-infixl 6 >:
+-- | Get all but the last element of a non-empty Prod.
+init' :: Prod f (a :< as) -> Prod f (Init' a as)
+init' (a :< as) = case as of
+  Ø      -> Ø
+  (:<){} -> a :< init' as
+
+-- | Get the last element of a non-empty Prod.
+last' :: Prod f (a :< as) -> f (Last' a as)
+last' (a :< as) = case as of
+  Ø      -> a
+  (:<){} -> last' as
 
 reverse' :: Prod f as -> Prod f (Reverse as)
 reverse' = \case
   Ø       -> Ø
   a :< as -> reverse' as >: a
 
-init' :: Prod f (a :< as) -> Prod f (Init' a as)
-init' (a :< as) = case as of
-  Ø      -> Ø
-  (:<){} -> a :< init' as
-
-last' :: Prod f (a :< as) -> f (Last' a as)
-last' (a :< as) = case as of
-  Ø      -> a
-  (:<){} -> last' as
-
 append' :: Prod f as -> Prod f bs -> Prod f (as ++ bs)
 append' = \case
   Ø       -> id
   a :< as -> (a :<) . append' as
+
+-- Tuple {{{
+
+-- | A Prod of simple Haskell types.
+type Tuple = Prod I
+
+-- | Singleton Tuple.
+only_ :: a -> Tuple '[a]
+only_ = only . I
+
+-- | Cons onto a Tuple.
+pattern (::<) :: a -> Tuple as -> Tuple (a :< as)
+pattern a ::< as = I a :< as
+infixr 5 ::<
+
+-- | Snoc onto a Tuple.
+(>::) :: Tuple as -> a -> Tuple (as >: a)
+(>::) = \case
+  Ø       -> only_
+  b :< as -> (b :<) . (as >::)
+infixl 6 >::
+
+-- }}}
 
 onHead' :: (f a -> f b) -> Prod f (a :< as) -> Prod f (b :< as)
 onHead' f (a :< as) = f a :< as
