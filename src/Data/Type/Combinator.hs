@@ -34,6 +34,7 @@ module Data.Type.Combinator where
 import Type.Class.HFunctor
 import Type.Class.Known
 import Type.Class.Witness
+import Type.Family.Tuple
 
 import Control.Applicative
 
@@ -51,6 +52,16 @@ instance Witness p q (f (g a)) => Witness p q ((f :.: g) a) where
   type WitnessC p q ((f :.: g) a) = Witness p q (f (g a))
   r \\ Comp a = r \\ a
 
+instance TestEquality f => TestEquality (f :.: g) where
+  testEquality (Comp a) (Comp b) = a =?= b //? qed
+
+instance TestEquality f => TestEquality1 ((:.:) f) where
+  testEquality1 (Comp a) (Comp b) = a =?= b //? qed
+
+-- }}}
+
+-- (:..:) {{{
+
 data ((f :: m -> *) :..: (g :: k -> l -> m)) :: k -> l -> * where
   Comp2 :: f (g a b) -> (f :..: g) a b
 infixr 6 :..:
@@ -63,6 +74,12 @@ instance Witness p q (f (g a b)) => Witness p q ((f :..: g) a b) where
   type WitnessC p q ((f :..: g) a b) = Witness p q (f (g a b))
   r \\ Comp2 a = r \\ a
 
+instance TestEquality f => TestEquality ((f :..: g) a) where
+  testEquality (Comp2 a) (Comp2 b) = a =?= b //? qed
+
+instance TestEquality f => TestEquality1 (f :..: g) where
+  testEquality1 (Comp2 a) (Comp2 b) = a =?= b //? qed
+
 -- }}}
 
 -- IT {{{
@@ -73,6 +90,9 @@ data IT :: (k -> *) -> k -> * where
 deriving instance Eq   (f a) => Eq   (IT f a)
 deriving instance Ord  (f a) => Ord  (IT f a)
 deriving instance Show (f a) => Show (IT f a)
+
+instance TestEquality f => TestEquality (IT f) where
+  testEquality (IT a) (IT b) = a =?= b
 
 instance HFunctor IT where
   map' f = IT . f . getIT
@@ -146,6 +166,9 @@ deriving instance Eq   (f (g a)) => Eq   (LL a f g)
 deriving instance Ord  (f (g a)) => Ord  (LL a f g)
 deriving instance Show (f (g a)) => Show (LL a f g)
 
+instance TestEquality f => TestEquality (LL a f) where
+  testEquality (LL a) (LL b) = a =?= b //? qed
+
 instance HFunctor (LL a) where
   map' f = LL . f . getLL
 
@@ -170,6 +193,9 @@ newtype RR (g :: k -> l) (f :: l -> *) (a :: k) = RR
 deriving instance Eq   (f (g a)) => Eq   (RR g f a)
 deriving instance Ord  (f (g a)) => Ord  (RR g f a)
 deriving instance Show (f (g a)) => Show (RR g f a)
+
+instance TestEquality f => TestEquality (RR g f) where
+  testEquality (RR a) (RR b) = a =?= b //? qed
 
 instance HFunctor (RR g) where
   map' f = RR . f . getRR
@@ -198,6 +224,12 @@ deriving instance Show (f a (g a)) => Show (SS f g a)
 instance Witness p q (f a (g a)) => Witness p q (SS f g a) where
   type WitnessC p q (SS f g a) = Witness p q (f a (g a))
   r \\ SS a = r \\ a
+
+{-
+instance TestEquality1 f => TestEquality (SS f g) where
+  testEquality (SS a) (SS b) = a =??= b //? qed
+  -- Need forall a. (TestEquality (f a))
+-}
 
 -- }}}
 
@@ -283,16 +315,85 @@ newtype Flip p b a = Flip
   { getFlip :: p a b
   } deriving (Eq,Ord,Show)
 
-instance Known (p a) b => Known (Flip p b) a where
-  type KnownC (Flip p b) a = Known (p a) b
-  known = Flip known
+flipTestEquality1 :: TestEquality (p c) => Flip p a c -> Flip p b c -> Maybe (a :~: b)
+flipTestEquality1 (Flip a) (Flip b) = a =?= b
+
+instance TestEquality1 p => TestEquality (Flip p b) where
+  testEquality (Flip a) (Flip b) = a =??= b
 
 instance Witness p q (f a b) => Witness p q (Flip f b a) where
   type WitnessC p q (Flip f b a) = Witness p q (f a b)
   r \\ Flip a = r \\ a
 
+instance Known (p a) b => Known (Flip p b) a where
+  type KnownC (Flip p b) a = Known (p a) b
+  known = Flip known
+
 flipped :: (f a b -> g c d) -> Flip f b a -> Flip g d c
 flipped f = Flip . f . getFlip
+
+-- }}}
+
+-- Cur {{{
+
+newtype Cur (p :: (k,l) -> *) :: k -> l -> * where
+  Cur :: { getCur :: p (a#b) } -> Cur p a b
+
+instance Known p (a#b) => Known (Cur p a) b where
+  type KnownC (Cur p a) b = Known p (a#b)
+  known = Cur known
+
+instance Witness q r (p (a#b)) => Witness q r (Cur p a b) where
+  type WitnessC q r (Cur p a b) = Witness q r (p (a#b))
+  r \\ Cur p = r \\ p
+
+-- }}}
+
+-- Uncur {{{
+
+data Uncur (p :: k -> l -> *) :: (k,l) -> * where
+  Uncur :: { getUncur :: p a b } -> Uncur p (a#b)
+
+mapUncur :: (forall x y. p x y -> q x y) -> Uncur p a -> Uncur q a
+mapUncur f (Uncur a) = Uncur $ f a
+
+instance (Known (p a) b,q ~ (a#b)) => Known (Uncur p) q where
+  type KnownC (Uncur p) q = Known (p (Fst q)) (Snd q)
+  known = Uncur known
+
+instance (Witness r s (p a b),q ~ (a#b)) => Witness r s (Uncur p q) where
+  type WitnessC r s (Uncur p q) = Witness r s (p (Fst q) (Snd q))
+  r \\ Uncur p = r \\ p
+
+-- }}}
+
+-- Cur {{{
+
+newtype Cur3 (p :: (k,l,m) -> *) :: k -> l -> m -> * where
+  Cur3 :: { getCur3 :: p '(a,b,c) } -> Cur3 p a b c
+
+instance Known p '(a,b,c) => Known (Cur3 p a b) c where
+  type KnownC (Cur3 p a b) c = Known p '(a,b,c)
+  known = Cur3 known
+
+instance Witness q r (p '(a,b,c)) => Witness q r (Cur3 p a b c) where
+  type WitnessC q r (Cur3 p a b c) = Witness q r (p '(a,b,c))
+  r \\ Cur3 p = r \\ p
+
+-- }}}
+
+-- Uncur3 {{{
+
+data Uncur3 (p :: k -> l -> m -> *) :: (k,l,m) -> * where
+  Uncur3 :: { getUncur3 :: p a b c } -> Uncur3 p '(a,b,c)
+
+instance (Known (p a b) c,q ~ '(a,b,c)) => Known (Uncur3 p) q where
+  type KnownC (Uncur3 p) q = Known (p (Fst3 q) (Snd3 q)) (Thd3 q)
+  known = Uncur3 known
+
+instance (Witness r s (p a b c),q ~ '(a,b,c)) => Witness r s (Uncur3 p q) where
+  type WitnessC r s (Uncur3 p q) = Witness r s (p (Fst3 q) (Snd3 q) (Thd3 q))
+  r \\ Uncur3 p = r \\ p
 
 -- }}}
 

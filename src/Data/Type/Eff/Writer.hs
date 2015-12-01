@@ -30,7 +30,7 @@ tell :: (Writer o ∈ r) => o -> Eff r ()
 tell = send . Writer . (:)
 
 listen :: forall o r a. (Writer o ∈ r) => Eff r a -> Eff r (a,[o])
-listen = fmap (second ($[])) . interpose
+listen = fmap (second ($[])) . act
   ( \a -> return (a,id) )
   (\(Writer f :: Writer o v) k -> k () >>= \(a,g) -> return (a,f . g))
 
@@ -38,7 +38,7 @@ listen = fmap (second ($[])) . interpose
 -- censor 
 
 runWriter :: Eff (Writer o :< r) a -> Eff r (a,[o])
-runWriter = handleRelay
+runWriter = handle
   ( \a -> return (a,[]) )
   $ \(Writer f) k -> k () >>= \(a,os) -> return (a,f os)
 

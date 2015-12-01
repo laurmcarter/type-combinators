@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
@@ -42,6 +43,13 @@ data Sum (f :: k -> *) :: [k] -> * where
   InL :: !(f a) -> Sum f (a :< as)
   InR :: !(Sum f as) -> Sum f (a :< as)
 
+deriving instance ListC (Eq   <$> f <$> as) => Eq   (Sum f as)
+deriving instance
+  ( ListC (Eq   <$> f <$> as)
+  , ListC (Ord  <$> f <$> as)
+  ) => Ord  (Sum f as)
+deriving instance ListC (Show <$> f <$> as) => Show (Sum f as)
+
 -- | There are no possible values of the type @Sum f Ø@.
 nilSum :: Sum f Ø -> Void
 nilSum = impossible
@@ -70,6 +78,14 @@ index = \case
   IS x -> \case
     InR s -> index x s
     _     -> Nothing
+
+elimSum :: (forall x xs. f x -> p (x :< xs))
+        -> (forall x xs. Index as x -> p xs -> p (x :< xs))
+        -> Sum f as
+        -> p as
+elimSum t n = \case
+  InL a -> t a
+  InR s -> n IZ $ elimSum t (n . IS) s
 
 -- instances {{{
 
@@ -114,6 +130,23 @@ instance (Witness p q (f a), Witness p q (Sum f (b :< as))) => Witness p q (Sum 
   (\\) r = \case
     InL a -> r \\ a
     InR s -> r \\ s
+
+-- }}}
+
+-- Constraints {{{
+
+data (:+) :: Constraint -> [Constraint] -> * where
+  Subs :: { getSubs :: a => Sum Wit as } -> a :+ as
+infixr 1 :+
+
+(>>+) :: forall a bs cs. a :+ bs -> (forall b. Index bs b -> b :+ cs) -> a :+ cs
+Subs ab >>+ f = Subs $ go f ab
+  where
+  go :: (forall x. Index xs x -> x :+ cs) -> Sum Wit xs -> Sum Wit cs
+  go g = \case
+    InL Wit -> getSubs $ g IZ
+    InR w   -> go (g . IS) w
+infixl 1 >>+
 
 -- }}}
 

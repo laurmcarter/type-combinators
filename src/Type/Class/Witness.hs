@@ -1,3 +1,6 @@
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -47,11 +50,15 @@ import Type.Class.Known
 import Type.Family.Constraint
 
 import Data.Type.Equality as Exports
-import Data.Void          as Exports
+import Data.Void          as Exports hiding (absurd)
+import qualified Data.Void as Void
 
 import Prelude hiding (id,(.))
 import Control.Category
+import Control.Arrow
 import Unsafe.Coerce
+
+-- Wit {{{
 
 -- | A reified 'Constraint'.
 data Wit :: Constraint -> * where
@@ -59,6 +66,10 @@ data Wit :: Constraint -> * where
 
 data Wit1 :: (k -> Constraint) -> k -> * where
   Wit1 :: c a => Wit1 c a
+
+-- }}}
+
+-- (:-) {{{
 
 -- | Reified evidence of 'Constraint' entailment.
 --
@@ -77,8 +88,9 @@ instance Category (:-) where
   id              = Sub Wit
   Sub bc . Sub ab = Sub $ bc \\ ab
 
-type (:-:) = Bij (:-)
-infixr 4 :-:
+-- }}}
+
+-- Witness {{{
 
 -- | A general eliminator for entailment.
 --
@@ -94,16 +106,95 @@ class WitnessC p q t => Witness (p :: Constraint) (q :: Constraint) (t :: *) | t
   (\\) :: p => (q => r) -> t -> r
 infixl 1 \\
 
--- | Convert a 'Witness' to a canonical reified entailment.
-entailed :: Witness p q t => t -> p :- q
-entailed t = Sub (Wit \\ t)
-
 -- | Convert a 'Witness' to a canonical reified 'Constraint'.
 witnessed :: Witness ØC q t => t -> Wit q
 witnessed t = Wit \\ t
 
+-- | Convert a 'Witness' to a canonical reified entailment.
+entailed :: Witness p q t => t -> p :- q
+entailed t = Sub (Wit \\ t)
+
+-- }}}
+
+-- Constraint Combinators {{{
+
+class Fails (c :: Constraint) where
+  failC :: c :- Fail
+
+absurdC :: Fails a => a :- b
+absurdC = contraC failC
+
+class c => Const (c :: Constraint) (d :: k) where
+  constC :: Wit c
+
+instance c => Const c d where
+  constC = Wit
+
+class f (g a) => (∘) (f :: l -> Constraint) (g :: k -> l) (a :: k) where
+  compC :: Wit (f (g a))
+
+instance f (g a) => (f ∘ g) a where
+  compC = Wit
+infixr 9 ∘
+
+class (f a,g a) => (∧) (f :: k -> Constraint) (g :: k -> Constraint) (a :: k) where
+  conjC :: (Wit (f a),Wit (g a))
+infixr 7 ∧
+
+instance (f a,g a) => (f ∧ g) a where
+  conjC = (Wit,Wit)
+
+class (∨) (f :: k -> Constraint) (g :: k -> Constraint) (a :: k) where
+  disjC :: Either (Wit (f a)) (Wit (g a))
+infixr 6 ∨
+
+eitherC :: forall f g a b. f a :- b -> g a :- b -> (f ∨ g) a :- b
+eitherC f g = Sub $ case ((disjC :: Either (Wit (f a)) (Wit (g a))),f,g) of
+  (Left  a,Sub b,_    ) -> b \\ a
+  (Right a,_    ,Sub b) -> b \\ a
+
+pureC :: b => a :- b
+pureC = Sub Wit
+
+contraC :: a :- Fail -> a :- b
+contraC = (bottom .)
+
+-- }}}
+
+-- Forall {{{
+
+class Forall (p :: k -> Constraint) (q :: k -> Constraint) where
+  forall :: p a :- q a
+  default forall :: q a => p a :- q a
+  forall = pureC
+
+-- }}}
+
+-- Initial/Terminal {{{
+
+commute :: (a ~ b) :- (b ~ a)
+commute = Sub Wit
+
+type family Holds (b :: Bool) (c :: Constraint) :: Constraint where
+  Holds True  c = c
+  Holds False c = ØC
+
+falso :: (b ~ False) :- Holds b c
+falso = Sub Wit
+
+top :: a :- ØC
+top = Sub Wit
+
+type Fail = (True ~ False)
+
+bottom :: Fail :- c
+bottom = falso
+
 instance Witness ØC c (Wit c) where
   r \\ Wit = r
+
+instance Witness ØC (c a) (Wit1 c a) where
+  r \\ Wit1 = r
 
 -- | An entailment @p :- q@ is a Witness of @q@, given @p@.
 instance Witness p q (p :- q) where
@@ -119,18 +210,42 @@ instance c => Known Wit c where
   type KnownC Wit c = c
   known = Wit
 
+instance c a => Known (Wit1 c) a where
+  type KnownC (Wit1 c) a = c a
+  known = Wit1
+
 -- | Constraint chaining under @Maybe@.
-(/?) :: (Witness p q t, p) => Maybe t -> (q => Maybe r) -> Maybe r
-(/?) = \case
+(//?) :: (Witness p q t, p) => Maybe t -> (q => Maybe r) -> Maybe r
+(//?) = \case
   Just t -> (\\ t)
   _      -> \_ -> Nothing
-infixr 0 /?
+infixr 0 //?
+
+witMaybe :: (Witness p q t, p) => Maybe t -> (q => Maybe r) -> Maybe r -> Maybe r
+witMaybe mt y n = case mt of
+  Just t -> y \\ t
+  _      -> n
 
 qed :: Maybe (a :~: a)
 qed = Just Refl
 
 impossible :: a -> Void
 impossible = unsafeCoerce
+
+(=?=) :: TestEquality f => f a -> f b -> Maybe (a :~: b)
+(=?=) = testEquality
+infix 4 =?=
+
+class TestEquality1 (f :: k -> l -> *) where
+  testEquality1 :: f a c -> f b c -> Maybe (a :~: b)
+
+(=??=) :: TestEquality1 f => f a c -> f b c -> Maybe (a :~: b)
+(=??=) = testEquality1
+infix 4 =??=
+
+-- }}}
+
+-- Dec {{{
 
 data Dec a
   = Proven   a
@@ -147,22 +262,14 @@ decCase d y n = case d of
   Proven  a -> y a
   Refuted b -> n b
 
-data Bij p a b = Bij
-  { fwd :: p a b
-  , bwd :: p b a
-  }
+-- }}}
 
-($->) :: Bij p a b -> p a b
-($->) = fwd
-(<-$) :: Bij p a b -> p b a
-(<-$) = bwd
-infixr 1 $->, <-$
-
-instance Category p => Category (Bij p) where
-  id    = Bij id id
-  g . f = Bij (fwd g . fwd f) (bwd f . bwd g)
+absurd :: Arrow p => p Void a
+absurd = arr Void.absurd
 
 {-
+-- Category Classes {{{
+
 class Category c => Monoidal (c :: k -> k -> *) where
   type Tensor c :: k -> k -> k
   type Unit   c :: k
@@ -197,17 +304,7 @@ instance (Symmetric p, Monoidal p) => Monoidal (Bij p) where
 (***) :: Monoidal p => Bij p a b -> Bij p c d -> Bij p (Tensor p a c) (Tensor p b d)
 f *** g = (fwd f .*. fwd g) <-> (bwd f .*. bwd g)
 infixr 3 ***
+
+-- }}}
 -}
-
-type (<->) = Bij (->)
-infixr 5 <->
-
-(<->) :: p a b -> p b a -> Bij p a b
-(<->) = Bij
-
-(<?>) :: r <-> s -> Dec r -> Dec s
-(<?>) p = \case
-  Proven  a -> Proven  $ p $-> a
-  Refuted f -> Refuted $ \a -> f $ p <-$ a
-infix 3 <?>
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -38,21 +39,28 @@
 
 module Data.Type.Product where
 
-import Data.Type.Combinator ((:.:)(..),IT(..),I(..))
+import Data.Type.Combinator (I(..))
+import Data.Type.Conjunction
 import Data.Type.Index
 import Data.Type.Length
+import Data.Type.Quantifier
 import Type.Class.HFunctor
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.List
 
-import Control.Arrow ((&&&))
-
 data Prod (f :: k -> *) :: [k] -> * where
   Ø    :: Prod f Ø
   (:<) :: !(f a) -> !(Prod f as) -> Prod f (a :< as)
 infixr 5 :<
+
+deriving instance ListC (Eq   <$> f <$> as) => Eq   (Prod f as)
+deriving instance
+  ( ListC (Eq   <$> f <$> as)
+  , ListC (Ord  <$> f <$> as)
+  ) => Ord  (Prod f as)
+deriving instance ListC (Show <$> f <$> as) => Show (Prod f as)
 
 -- | Construct a two element Prod.
 --   Since the precedence of (:>) is higher than (:<),
@@ -107,6 +115,24 @@ append' = \case
   Ø       -> id
   a :< as -> (a :<) . append' as
 
+lookup' :: TestEquality f => f a -> Prod (f :&: g) as -> Maybe (g a)
+lookup' a = \case
+  Ø               -> Nothing
+  (b :&: v) :< bs -> witMaybe (a =?= b) (Just v) $ lookup' a bs
+
+lookupPar :: TestEquality f => f a -> Prod (f :*: g) as -> Maybe (Some g)
+lookupPar a = \case
+  Ø               -> Nothing
+  (b :*: v) :< bs -> witMaybe (a =?= b) (Just $ Some v) $ lookupPar a bs
+
+permute :: Known Length bs => (forall x. Index bs x -> Index as x) -> Prod f as -> Prod f bs
+permute f as = permute' f as known
+
+permute' :: (forall x. Index bs x -> Index as x) -> Prod f as -> Length bs -> Prod f bs
+permute' f as = \case
+  LZ   -> Ø
+  LS l -> index (f IZ) as :< permute' (f . IS) as l
+
 -- Tuple {{{
 
 -- | A Prod of simple Haskell types.
@@ -130,6 +156,11 @@ infixl 6 >::
 
 -- }}}
 
+elimProd :: p Ø -> (forall x xs. Index as x -> f x -> p xs -> p (x :< xs)) -> Prod f as -> p as
+elimProd n c = \case
+  Ø       -> n
+  a :< as -> c IZ a $ elimProd n (c . IS) as
+
 onHead' :: (f a -> f b) -> Prod f (a :< as) -> Prod f (b :< as)
 onHead' f (a :< as) = f a :< as
 
@@ -146,6 +177,11 @@ index :: Index as a -> Prod f as -> f a
 index = \case
   IZ -> head'
   IS x -> index x . tail'
+
+select :: Prod (Index as) bs -> Prod f as -> Prod f bs
+select = \case
+  Ø     -> pure Ø
+  x:<xs -> (:<) <$> index x <*> select xs
 
 instance HFunctor Prod where
   map' f = \case
@@ -171,6 +207,11 @@ instance HTraversable Prod where
   traverse' f = \case
     Ø       -> pure Ø
     a :< as -> (:<) <$> f a <*> traverse' f as
+
+instance HIxTraversable Index Prod where
+  itraverse' f = \case
+    Ø       -> pure Ø
+    a :< as -> (:<) <$> f IZ a <*> itraverse' (f . IS) as
 
 instance Known (Prod f) Ø where
   known = Ø

@@ -23,7 +23,7 @@ tsingleton = Leaf
 {-# INLINE tsingleton #-}
 
 (|>) :: MQueue m a b -> (b -> m c) -> MQueue m a c
-t |> k = Node t (Leaf k)
+t |> k = t >< Leaf k
 {-# INLINE (|>) #-}
 infixl 1 |>
 
@@ -34,8 +34,8 @@ infixl 1 ><
 
 data ViewL m a b where
   V1   :: (a -> m b) -> ViewL m a b
-  (:|) :: (a -> m x) -> MQueue m x b -> ViewL m a b
-infix 2 :|
+  (:>=>) :: (a -> m x) -> MQueue m x b -> ViewL m a b
+infix 2 :>=>
 
 viewl :: MQueue m a b -> ViewL m a b
 viewl = \case
@@ -44,7 +44,7 @@ viewl = \case
   where
   go :: MQueue m a x -> MQueue m x b -> ViewL m a b
   go = \case
-    Leaf k   -> (k :|)
+    Leaf k   -> (k :>=>)
     Node l r -> go l . Node r
 {-# INLINE viewl #-}
 

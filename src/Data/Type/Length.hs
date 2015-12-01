@@ -36,6 +36,14 @@ data Length :: [k] -> * where
   LZ :: Length Ø
   LS :: !(Length as) -> Length (a :< as)
 
+elimLength :: p Ø
+           -> (forall x xs. Length xs -> p xs -> p (x :< xs))
+           -> Length as
+           -> p as
+elimLength z s = \case
+  LZ   -> z
+  LS l -> s l $ elimLength z s l
+
 lOdd, lEven :: Length as -> Bool
 lOdd = \case
   LZ   -> False

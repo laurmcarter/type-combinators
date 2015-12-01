@@ -29,12 +29,11 @@
 module Data.Type.Nat where
 
 import Data.Type.Equality
-import Data.Type.Product
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
-import Type.Family.List
 import Type.Family.Nat
+-- import Type.Class.Categories
 
 data Nat :: N -> * where
   Z_ :: Nat Z
@@ -68,8 +67,9 @@ instance TestEquality Nat where
       S_ _ -> Nothing
     S_ x -> \case
       Z_   -> Nothing
-      S_ y -> testEquality x y /? qed
+      S_ y -> testEquality x y //? qed
 
+{-
 instance DecEquality Nat where
   decideEquality = \case
     Z_ -> \case
@@ -78,6 +78,7 @@ instance DecEquality Nat where
     S_ x -> \case
       Z_   -> Refuted $ _ZneS . sym
       S_ y -> (_S <-> _s) <?> decideEquality x y
+-}
 
 _Z :: Z :~: Z
 _Z = Refl
@@ -123,10 +124,15 @@ infixr 7 .*
   S_ y -> (x .^ y) .* x
 infixl 8 .^
 
-nat :: Nat n -> Int
-nat = \case
+elimNat :: p Z -> (forall x. Nat x -> p x -> p (S x)) -> Nat n -> p n
+elimNat z s = \case
+  Z_   -> z
+  S_ x -> s x $ elimNat z s x
+
+natVal :: Nat n -> Int
+natVal = \case
   Z_   -> 0
-  S_ x -> succ $ nat x
+  S_ x -> succ $ natVal x
 
 n0  :: Nat N0
 n1  :: Nat N1

@@ -15,7 +15,7 @@
 {-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Type.Product.Dual
+-- Module      :  Data.Type.Product.Order2
 -- Copyright   :  Copyright (C) 2015 Kyle Carter
 -- License     :  BSD3
 --
@@ -28,18 +28,14 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Type.Product.Dual where
+module Data.Type.Product.Order2 where
 
-import Data.Type.Combinator ((:.:)(..),IT(..),I(..))
 import Data.Type.Index
-import Data.Type.Length
-import Type.Class.HFunctor
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.List
 
-import Control.Arrow ((&&&))
 import Data.Monoid ((<>))
 
 data FProd (fs :: [k -> *]) :: k -> * where

@@ -35,7 +35,7 @@ module Data.Type.Conjunction where
 import Type.Class.HFunctor
 import Type.Class.Known
 import Type.Class.Witness
-import Type.Family.Pair
+import Type.Family.Tuple
 
 -- (:&:) {{{
 
@@ -52,6 +52,13 @@ fanFst (a :&: _) = a
 
 fanSnd :: (f :&: g) a -> g a
 fanSnd (_ :&: b) = b
+
+(.&.) :: (f a -> h b) -> (g a -> i b) -> (f :&: g) a -> (h :&: i) b
+(f .&. g) (a :&: b) = f a :&: g b
+infixr 3 .&.
+
+fanFirst :: (f a -> g a) -> (f :&: h) a -> (g :&: h) a
+fanFirst f (a :&: b) = f a :&: b
 
 uncurryFan :: (f a -> g a -> r) -> (f :&: g) a -> r
 uncurryFan f (a :&: b) = f a b

@@ -17,12 +17,13 @@
 module Data.Type.Eff where
 
 import Data.Type.Index
-import Data.Type.Sum.Dual
+import Data.Type.Sum.Left
 import Data.Type.MQueue
+import Type.Class.Witness
 import Type.Family.List
 
 data Eff r a
-  = Val a
+  = Ret a
   | forall b. E (FSum r b) (Arrs r b a)
 
 type Arr  r a b = a -> Eff r b
@@ -31,64 +32,62 @@ type Arrs r     = MQueue (Eff r)
 qApp :: Arrs r a b -> a -> Eff r b
 qApp q x = case viewl q of
   V1 k -> k x
-  k :| t -> case k x of
-    Val y -> qApp t y
-    E u q -> E u $ q >< t
+  k :>=> t -> case k x of
+    Ret y -> qApp t y
+    E u r -> E u $ r >< t
 
-qComp :: Arrs r a b -> (Eff r b -> Eff r' c) -> Arr r' a c
-qComp g h = h . qApp g
+qComp :: (Eff r b -> Eff s c) -> Arrs r a b -> a -> Eff s c
+qComp h g = h . qApp g
 
 instance Functor (Eff r) where
   fmap f = \case
-    Val x -> Val $ f x
-    E u q -> E u $ q |> Val . f
+    Ret x -> Ret $ f x
+    E u q -> E u $ q |> Ret . f
 
 instance Applicative (Eff r) where
-  pure = Val
+  pure = Ret
   (<*>) = \case
-    Val f -> \case
-      Val a -> Val $ f a
-      E u q -> E u $ q |> Val . f
-    E u q -> \case
-      Val a -> E u $ q |> Val . ($ a)
-      m     -> E u $ q |> (<$> m)
+    Ret f -> \case
+      Ret a -> Ret $ f a
+      E u q -> E u $ q |> Ret . f
+    E u q -> E u . (q |>) . \case
+      Ret a -> Ret . ($ a)
+      m     -> (<$> m)
 
 instance Monad (Eff r) where
   m >>= k = case m of
-    Val a -> k a
+    Ret a -> k a
     E u q -> E u $ q |> k
 
 send :: (t ∈ r) => t v -> Eff r v
-send t = E (injF t) $ tsingleton Val
+send = retSum . finj
 
 run :: Eff Ø w -> w
 run = \case
-  Val a -> a
-  _     -> error "impossible type"
+  Ret a -> a
+  E x _ -> absurd $ nilFSum x
 
-handleRelay :: (a -> Eff r w)
-  -> (forall v. t v -> Arr r v w -> Eff r w)
+bind :: FSum r a -> (a -> Eff r b) -> Eff r b
+bind v = E v . tsingleton
+
+retSum :: FSum r a -> Eff r a
+retSum = (`bind` Ret)
+
+handle :: (a -> Eff r w)
+  -> (forall v. t v -> (v -> Eff r w) -> Eff r w)
   -> Eff (t :< r) a -> Eff r w
-handleRelay ret h = loop
+handle ret h = go
   where
-  loop = \case
-    Val x -> ret x
-    E u q -> case decompF u of
-      Left  x -> h x k
-      Right u -> E u $ tsingleton k
-      where
-      k = qComp q loop
+  go = \case
+    Ret x -> ret x
+    E u q -> either h bind (fdecomp u) $ qComp go q
 
-interpose :: (t ∈ r) => (a -> Eff r w)
-  -> (forall v. t v -> Arr r v w -> Eff r w)
+act :: (t ∈ r) => (a -> Eff r w)
+  -> (forall v. t v -> (v -> Eff r w) -> Eff r w)
   -> Eff r a -> Eff r w
-interpose ret h = loop
+act ret h = go
   where
-  loop = \case
-    Val x -> ret x
-    E u q -> case prjF u of
-      Just x -> h x k
-      _      -> E u $ tsingleton k
-      where
-      k = qComp q loop
+  go = \case
+    Ret x -> ret x
+    E u q -> maybe (bind u) h (fprj u) $ qComp go q
 
