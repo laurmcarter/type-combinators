@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
@@ -22,10 +23,9 @@
 -- Stability   :  experimental
 -- Portability :  RankNTypes
 --
--- 'Sum' and 'SumF' are type combinators for representing disjoint sums of
--- indices @(as :: [k])@ of a single functor @(f :: k -> *), or of
--- many functors @(fs :: [k -> *])@ at a single index @(a :: k)@,
--- respectively.
+-- 'Sum' is a type combinators for representing disjoint sums of
+-- indices @(as :: [k])@ of a single functor @(f :: k -> *).
+-- Contrast to the many-functors-one-index 'FSum'
 --
 -----------------------------------------------------------------------------
 
@@ -42,6 +42,17 @@ import Type.Family.List
 data Sum (f :: k -> *) :: [k] -> * where
   InL :: !(f a) -> Sum f (a :< as)
   InR :: !(Sum f as) -> Sum f (a :< as)
+
+deriving instance ListC (Eq   <$> f <$> as) => Eq   (Sum f as)
+deriving instance
+  ( ListC (Eq   <$> f <$> as)
+  , ListC (Ord  <$> f <$> as)
+  ) => Ord  (Sum f as)
+deriving instance ListC (Show <$> f <$> as) => Show (Sum f as)
+
+-- | There are no possible values of the type @Sum f Ø@.
+nilSum :: Sum f Ø -> Void
+nilSum = impossible
 
 decomp :: Sum f (a :< as) -> Either (f a) (Sum f as)
 decomp = \case
@@ -67,6 +78,14 @@ index = \case
   IS x -> \case
     InR s -> index x s
     _     -> Nothing
+
+elimSum :: (forall x xs. f x -> p (x :< xs))
+        -> (forall x xs. Index as x -> p xs -> p (x :< xs))
+        -> Sum f as
+        -> p as
+elimSum t n = \case
+  InL a -> t a
+  InR s -> n IZ $ elimSum t (n . IS) s
 
 -- instances {{{
 
@@ -114,37 +133,20 @@ instance (Witness p q (f a), Witness p q (Sum f (b :< as))) => Witness p q (Sum 
 
 -- }}}
 
-data SumF :: [k -> *] -> k -> * where
-  InLF :: !(f a) -> SumF (f :< fs) a
-  InRF :: !(SumF fs a) -> SumF (f :< fs) a
+-- Constraints {{{
 
-instance ListC (Functor <$> fs) => Functor (SumF fs) where
-  fmap f = \case
-    InLF a -> InLF $ f <$> a
-    InRF s -> InRF $ f <$> s
+data (:+) :: Constraint -> [Constraint] -> * where
+  Subs :: { getSubs :: a => Sum Wit as } -> a :+ as
+infixr 1 :+
 
-decompF :: SumF (f :< fs) a -> Either (f a) (SumF fs a)
-decompF = \case
-  InLF a -> Left  a
-  InRF s -> Right s
+(>>+) :: forall a bs cs. a :+ bs -> (forall b. Index bs b -> b :+ cs) -> a :+ cs
+Subs ab >>+ f = Subs $ go f ab
+  where
+  go :: (forall x. Index xs x -> x :+ cs) -> Sum Wit xs -> Sum Wit cs
+  go g = \case
+    InL Wit -> getSubs $ g IZ
+    InR w   -> go (g . IS) w
+infixl 1 >>+
 
-injF :: (f ∈ fs) => f a -> SumF fs a
-injF = injectSumF elemIndex
-
-prjF :: (f ∈ fs) => SumF fs a -> Maybe (f a)
-prjF = indexF elemIndex
-
-injectSumF :: Index fs f -> f a -> SumF fs a
-injectSumF = \case
-  IZ   -> InLF
-  IS x -> InRF . injectSumF x
-
-indexF :: Index fs f -> SumF fs a -> Maybe (f a)
-indexF = \case
-  IZ -> \case
-    InLF a -> Just a
-    _      -> Nothing
-  IS x -> \case
-    InRF s -> indexF x s
-    _      -> Nothing
+-- }}}
 

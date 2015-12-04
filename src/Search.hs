@@ -24,16 +24,19 @@ instance Functor Bin where
     Empty -> Empty
     Branch a l r -> Branch (f a) (f <$> l) (f <$> r)
 
+leaf :: a -> Bin a
+leaf a = Branch a Empty Empty
+
 b0 :: Bin Int
 b0 = Branch 1
   ( Branch 2
     ( Branch 3
       ( Branch 4 Empty
-        ( Branch 5 Empty Empty
+        ( leaf 5
         )
       )
       ( Branch 6
-        ( Branch 7 Empty Empty
+        ( leaf 7
         )
         Empty
       )
@@ -41,10 +44,10 @@ b0 = Branch 1
     Empty
   )
   ( Branch 8
-    ( Branch 9 Empty Empty
+    ( leaf 9
     )
     ( Branch 10 Empty
-      ( Branch 11 Empty Empty
+      ( leaf 11
       )
     )
   )

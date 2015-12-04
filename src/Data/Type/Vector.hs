@@ -44,7 +44,6 @@ import Data.Type.Length
 import Data.Type.Nat
 import Data.Type.Product (Prod(..),curry',pattern (:>))
 
-import Type.Class.HFunctor
 import Type.Class.Known
 import Type.Class.Witness
 
@@ -52,17 +51,27 @@ import Type.Family.Constraint
 import Type.Family.List
 import Type.Family.Nat
 
-import Control.Applicative
-import Control.Arrow
-import Control.Monad (join)
 import qualified Data.List as L
 import Data.Monoid
-import qualified Data.Foldable as F
 
 data VT (n :: N) (f :: k -> *) :: k -> * where
   ØV   :: VT Z f a
   (:*) :: !(f a) -> !(VT n f a) -> VT (S n) f a
 infixr 4 :*
+
+elimVT :: p Z
+       -> (forall x. f a -> p x -> p (S x))
+       -> VT n f a
+       -> p n
+elimVT z s = \case
+  ØV      -> z
+  a :* as -> s a $ elimVT z s as
+
+elimV :: p Z
+      -> (forall x. a -> p x -> p (S x))
+      -> V n a
+      -> p n
+elimV z s = elimVT z $ s . getI
 
 type V n = VT n I
 pattern (:+) :: a -> V n a -> V (S n) a
@@ -151,8 +160,8 @@ vfoldMap f = \case
 
 withVT :: [f a] -> (forall n. VT n f a -> r) -> r
 withVT as k = case as of
-  []     -> k ØV
-  a : as -> withVT as $ \v -> k $ a :* v
+  []      -> k ØV
+  a : as' -> withVT as' $ \v -> k $ a :* v
 
 withV :: [a] -> (forall n. V n a -> r) -> r
 withV as k = withVT (I <$> as) k
@@ -290,9 +299,9 @@ ppMatrix' = \case
 mzipWith :: Monoid a => (a -> a -> b) -> [a] -> [a] -> [b]
 mzipWith f as bs = case (as,bs) of
   ([]  ,[]  ) -> []
-  (a:as,[]  ) -> f a      mempty : mzipWith f as []
-  ([]  ,b:bs) -> f mempty b      : mzipWith f [] bs
-  (a:as,b:bs) -> f a      b      : mzipWith f as bs
+  (a:as',[]  ) -> f a      mempty  : mzipWith f as' []
+  ([]   ,b:bs') -> f mempty b      : mzipWith f []  bs'
+  (a:as',b:bs') -> f a      b      : mzipWith f as' bs'
 
 zipLines :: (ShowS -> ShowS -> ShowS) -> ShowS -> ShowS -> ShowS
 zipLines f a b = compose $ L.intersperse (showChar '\n') $ mzipWith

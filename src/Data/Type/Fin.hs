@@ -30,9 +30,7 @@
 
 module Data.Type.Fin where
 
-import Data.Type.Combinator
 import Data.Type.Nat
-import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
@@ -45,6 +43,13 @@ data Fin :: N -> * where
 deriving instance Eq   (Fin n)
 deriving instance Ord  (Fin n)
 deriving instance Show (Fin n)
+
+elimFin :: (forall x. p (S x))
+        -> (forall x. Fin x -> p x -> p (S x))
+        -> Fin n -> p n
+elimFin z s = \case
+  FZ   -> z
+  FS n -> s n $ elimFin z s n
 
 -- | Gives the list of all members of the finite set of size @n@.
 fins :: Nat n -> [Fin n]

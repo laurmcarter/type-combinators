@@ -54,3 +54,9 @@ class HBifunctor (t :: (k -> *) -> (l -> *) -> m -> *) where
          -> t f g b
          -> t h i b
 
+class HIxBifunctor (i :: m -> k -> *) (j :: m -> l -> *) (t :: (k -> *) -> (l -> *) -> m -> *) | t -> i j where
+  ibimap' :: (forall (a :: k). i b a -> f a -> f' a)
+          -> (forall (a :: l). j b a -> g a -> g' a)
+          -> t f  g  b
+          -> t f' g' b
+

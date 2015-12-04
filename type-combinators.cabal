@@ -1,47 +1,58 @@
 name: type-combinators
-version: 0.1.0.0
+version: 0.1.2.2
+category: Data
+synopsis: A collection of data types for type-level programming
 cabal-version: >=1.10
 build-type: Simple
 license: BSD3
 license-file: LICENSE
 maintainer: kylcarte@gmail.com
 author: Kyle Carter
+homepage: https://github.com/kylcarte/type-combinators
+
+Source-Repository head
+    type: git
+    location: git://github.com/kylcarte/type-combinators.git
 
 library
     exposed-modules:
-        Data.Type.Graph
-        Data.Type.Graph.Finite
-        Data.Type.Fin
-        Data.Type.Eff.Writer
-        Data.Type.Eff.NonDet
-        Data.Type.Eff.Reader
-        Data.Type.Eff
-        Data.Type.MQueue
-        Data.Type.Length
-        Data.Type.Vector
+        Test
+        Data.Type.Sym.Quote
+        Data.Type.Sym
+        Type.Family.Symbol
+        -- Data.Type.Cyclic
         Data.Type.Combinator
         Data.Type.Conjunction
         Data.Type.Disjunction
+        Data.Type.Fin
         Data.Type.Index
+        Data.Type.Index.Quote
+        Data.Type.Length
         Data.Type.Nat
+        Data.Type.Nat.Quote
         Data.Type.Option
         Data.Type.Product
+        Data.Type.Product.Order2
         Data.Type.Sum
+        Data.Type.Sum.Order2
         Data.Type.Quantifier
+        Data.Type.Vector
         Type.Class.HFunctor
         Type.Class.Known
         Type.Class.Witness
         Type.Family.Constraint
-        Type.Family.Pair
         Type.Family.List
         Type.Family.Maybe
         Type.Family.Monoid
         Type.Family.Nat
+        Type.Family.Tuple
     build-depends:
         base >=4.8 && <4.9,
-        containers -any,
-        transformers -any,
-        mtl -any
+        containers,
+        template-haskell,
+        transformers,
+        mtl
     default-language: Haskell2010
     hs-source-dirs: src
+    ghc-options: -Wall -fno-warn-unticked-promoted-constructors
 

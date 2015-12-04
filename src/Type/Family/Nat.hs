@@ -34,11 +34,22 @@ module Type.Family.Nat
 
 import Data.Type.Equality
 import Type.Family.List
+import Type.Class.Witness
 
 data N
   = Z
   | S N
   deriving (Eq,Ord,Show)
+
+type family IsZero (x :: N) :: Bool where
+  IsZero Z     = True
+  IsZero (S x) = False
+
+zeroCong :: (x ~ y) :- (IsZero x ~ IsZero y)
+zeroCong = Sub Wit
+
+zNotS :: (Z ~ S x) :- Fail
+zNotS = zeroCong
 
 type family NatEq (x :: N) (y :: N) :: Bool where
   NatEq  Z     Z    = True
@@ -51,23 +62,52 @@ type family Iota (x :: N) :: [N] where
   Iota Z     = Ø
   Iota (S x) = x :< Iota x
 
+iotaCong :: (x ~ y) :- (Iota x ~ Iota y)
+iotaCong = Sub Wit
+
 type family Pred (x :: N) :: N where
   Pred (S n) = n
+
+predCong :: (x ~ y) :- (Pred x ~ Pred y)
+predCong = Sub Wit
 
 type family (x :: N) + (y :: N) :: N where
   Z   + y = y
   S x + y = S (x + y)
 infixr 6 +
 
+addCong :: (w ~ y,x ~ z) :- ((w + x) ~ (y + z))
+addCong = Sub Wit
+
 type family (x :: N) * (y :: N) :: N where
   Z   * y = Z
   S x * y = (x * y) + y
 infixr 7 *
 
+mulCong :: (w ~ y,x ~ z) :- ((w * x) ~ (y * z))
+mulCong = Sub Wit
+
 type family (x :: N) ^ (y :: N) :: N where
   x ^   Z = S Z
   x ^ S y = (x ^ y) * x
 infixl 8 ^
+
+expCong :: (w ~ y,x ~ z) :- ((w ^ x) ~ (y ^ z))
+expCong = Sub Wit
+
+type family Len (as :: [k]) :: N where
+  Len  Ø        = Z
+  Len (a :< as) = S (Len as)
+
+lenCong :: (as ~ bs) :- (Len as ~ Len bs)
+lenCong = Sub Wit
+
+type family Ix (x :: N) (as :: [k]) :: k where
+  Ix Z     (a :< as) = a
+  Ix (S x) (a :< as) = Ix x as
+
+ixCong :: (x ~ y,as ~ bs) :- (Ix x as ~ Ix y bs)
+ixCong = Sub Wit
 
 -- | Convenient aliases for low-value Peano numbers.
 type N0  = Z
