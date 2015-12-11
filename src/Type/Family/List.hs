@@ -26,10 +26,7 @@
 -- type-level lists.
 ----------------------------------------------------------------------------
 
-module Type.Family.List
-  ( module Type.Family.List
-  , (==)
-  ) where
+module Type.Family.List where
 
 import Type.Family.Constraint
 import Type.Family.Monoid

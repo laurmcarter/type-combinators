@@ -35,6 +35,7 @@ library
         Type.Class.Known
         Type.Class.Witness
         Type.Family.Constraint
+        Type.Family.Either
         Type.Family.List
         Type.Family.Maybe
         Type.Family.Monoid
