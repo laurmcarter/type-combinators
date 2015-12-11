@@ -52,7 +52,7 @@ instance (Category p, Category q) => Category (F p q) where
     , bwd = bwd f . bwd g
     }
 
-type Partial = F (Kleisli Maybe) (->)
+type Partial   = F (Kleisli Maybe) (->)
 
 partial :: (a -> Maybe b) -> (b -> a) -> Partial a b
 partial f g = F

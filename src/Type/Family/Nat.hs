@@ -41,6 +41,12 @@ data N
   | S N
   deriving (Eq,Ord,Show)
 
+fromInt :: Int -> Maybe N
+fromInt n = case compare n 0 of
+  LT -> Nothing
+  EQ -> Just Z
+  GT -> S <$> fromInt (n-1)
+
 type family IsZero (x :: N) :: Bool where
   IsZero Z     = True
   IsZero (S x) = False

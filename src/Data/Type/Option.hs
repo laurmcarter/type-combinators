@@ -1,9 +1,9 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -29,7 +29,7 @@
 
 module Data.Type.Option where
 
-import Type.Class.HFunctor
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Maybe
@@ -46,18 +46,18 @@ option j n = \case
 
 -- | We can take a natural transformation of @(forall x. f x -> g x)@ to
 -- a natural transformation of @(forall mx. 'Option' f mx -> 'Option' g mx)@.
-instance HFunctor Option where
-  map' f = \case
+instance Functor1 Option where
+  map1 f = \case
     Just_ a  -> Just_ $ f a
     Nothing_ -> Nothing_
 
-instance HFoldable Option where
-  foldMap' f = \case
+instance Foldable1 Option where
+  foldMap1 f = \case
     Just_ a  -> f a
     Nothing_ -> mempty
 
-instance HTraversable Option where
-  traverse' f = \case
+instance Traversable1 Option where
+  traverse1 f = \case
     Just_ a  -> Just_ <$> f a
     Nothing_ -> pure Nothing_
 

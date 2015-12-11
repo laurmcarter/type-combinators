@@ -1,10 +1,8 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -15,7 +13,7 @@
 {-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Type.Product.Order2
+-- Module      :  Data.Type.Product.Lifted
 -- Copyright   :  Copyright (C) 2015 Kyle Carter
 -- License     :  BSD3
 --
@@ -28,7 +26,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Type.Product.Order2 where
+module Data.Type.Product.Lifted where
 
 import Data.Type.Index
 import Type.Class.Known

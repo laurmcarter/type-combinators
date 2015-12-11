@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -5,7 +6,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -81,26 +81,6 @@ without = \case
   FS x -> \case
     FZ   -> Just FZ \\ x
     FS y -> FS <$> without x y \\ x
-
-class (x :: N) <= (y :: N) where
-  weakenN :: Fin x -> Fin y
-
-instance {-# OVERLAPPING #-} x <= x where
-  weakenN = id
-
-instance {-# OVERLAPPABLE #-} (x <= y) => x <= S y where
-  weakenN = weaken . weakenN
-
-{-
-instance Known Nat n => Known ([] :.: Fin) n where
-  type KnownC ([] :.: Fin) n = Known Nat n
-  known = Comp $ go (known :: Nat n)
-    where
-    go :: Nat x -> [Fin x]
-    go = \case
-      Z_   -> []
-      S_ x -> FZ : map FS (go x)
--}
 
 -- | Take a 'Fin' to an existentially quantified 'Nat'.
 finNat :: Fin x -> Some Nat

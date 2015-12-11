@@ -1,11 +1,11 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -39,12 +39,12 @@
 
 module Data.Type.Product where
 
-import Data.Type.Combinator (I(..))
+import Data.Type.Combinator
 import Data.Type.Conjunction
 import Data.Type.Index
 import Data.Type.Length
 import Data.Type.Quantifier
-import Type.Class.HFunctor
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
@@ -61,6 +61,15 @@ deriving instance
   , ListC (Ord  <$> f <$> as)
   ) => Ord  (Prod f as)
 deriving instance ListC (Show <$> f <$> as) => Show (Prod f as)
+
+instance TestEquality f => TestEquality (Prod f) where
+  testEquality = \case
+    Ø -> \case
+      Ø -> qed
+      _ -> Nothing
+    a :< as -> \case
+      b :< bs -> a =?= b //? as =?= bs //? qed
+      _       -> Nothing
 
 -- | Construct a two element Prod.
 --   Since the precedence of (:>) is higher than (:<),
@@ -183,35 +192,35 @@ select = \case
   Ø     -> pure Ø
   x:<xs -> (:<) <$> index x <*> select xs
 
-instance HFunctor Prod where
-  map' f = \case
+instance Functor1 Prod where
+  map1 f = \case
     Ø -> Ø
-    a :< as -> f a :< map' f as
+    a :< as -> f a :< map1 f as
 
-instance HIxFunctor Index Prod where
-  imap' f = \case
+instance IxFunctor1 Index Prod where
+  imap1 f = \case
     Ø -> Ø
-    a :< as -> f IZ a :< imap' (f . IS) as
+    a :< as -> f IZ a :< imap1 (f . IS) as
 
-instance HFoldable Prod where
-  foldMap' f = \case
+instance Foldable1 Prod where
+  foldMap1 f = \case
     Ø       -> mempty
-    a :< as -> f a `mappend` foldMap' f as
+    a :< as -> f a `mappend` foldMap1 f as
 
-instance HIxFoldable Index Prod where
-  ifoldMap' f = \case
+instance IxFoldable1 Index Prod where
+  ifoldMap1 f = \case
     Ø       -> mempty
-    a :< as -> f IZ a `mappend` ifoldMap' (f . IS) as
+    a :< as -> f IZ a `mappend` ifoldMap1 (f . IS) as
 
-instance HTraversable Prod where
-  traverse' f = \case
+instance Traversable1 Prod where
+  traverse1 f = \case
     Ø       -> pure Ø
-    a :< as -> (:<) <$> f a <*> traverse' f as
+    a :< as -> (:<) <$> f a <*> traverse1 f as
 
-instance HIxTraversable Index Prod where
-  itraverse' f = \case
+instance IxTraversable1 Index Prod where
+  itraverse1 f = \case
     Ø       -> pure Ø
-    a :< as -> (:<) <$> f IZ a <*> itraverse' (f . IS) as
+    a :< as -> (:<) <$> f IZ a <*> itraverse1 (f . IS) as
 
 instance Known (Prod f) Ø where
   known = Ø

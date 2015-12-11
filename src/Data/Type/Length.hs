@@ -36,6 +36,17 @@ data Length :: [k] -> * where
   LZ :: Length Ø
   LS :: !(Length as) -> Length (a :< as)
 
+deriving instance Eq   (Length as)
+deriving instance Ord  (Length as)
+deriving instance Show (Length as)
+
+instance Known Length Ø where
+  known = LZ
+
+instance Known Length as => Known Length (a :< as) where
+  type KnownC Length (a :< as) = Known Length as
+  known = LS known
+
 elimLength :: p Ø
            -> (forall x xs. Length xs -> p xs -> p (x :< xs))
            -> Length as
@@ -51,15 +62,4 @@ lOdd = \case
 lEven = \case
   LZ   -> True
   LS l -> lOdd l
-
-deriving instance Eq   (Length as)
-deriving instance Ord  (Length as)
-deriving instance Show (Length as)
-
-instance Known Length Ø where
-  known = LZ
-
-instance Known Length as => Known Length (a :< as) where
-  type KnownC Length (a :< as) = Known Length as
-  known = LS known
 

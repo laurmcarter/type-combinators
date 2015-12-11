@@ -69,17 +69,6 @@ instance TestEquality Nat where
       Z_   -> Nothing
       S_ y -> testEquality x y //? qed
 
-{-
-instance DecEquality Nat where
-  decideEquality = \case
-    Z_ -> \case
-      Z_   -> Proven  _Z
-      S_ _ -> Refuted _ZneS
-    S_ x -> \case
-      Z_   -> Refuted $ _ZneS . sym
-      S_ y -> (_S <-> _s) <?> decideEquality x y
--}
-
 _Z :: Z :~: Z
 _Z = Refl
 
@@ -133,28 +122,4 @@ natVal :: Nat n -> Int
 natVal = \case
   Z_   -> 0
   S_ x -> succ $ natVal x
-
-n0  :: Nat N0
-n1  :: Nat N1
-n2  :: Nat N2
-n3  :: Nat N3
-n4  :: Nat N4
-n5  :: Nat N5
-n6  :: Nat N6
-n7  :: Nat N7
-n8  :: Nat N8
-n9  :: Nat N9
-n10 :: Nat N10
-
-n0  = Z_
-n1  = S_ n0
-n2  = S_ n1
-n3  = S_ n2
-n4  = S_ n3
-n5  = S_ n4
-n6  = S_ n5
-n7  = S_ n6
-n8  = S_ n7
-n9  = S_ n8
-n10 = S_ n9
 

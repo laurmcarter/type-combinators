@@ -1,9 +1,8 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -32,7 +31,7 @@
 
 module Data.Type.Disjunction where
 
-import Type.Class.HFunctor
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 
@@ -49,23 +48,23 @@ f >|< g = \case
   R b -> g b
 infixr 2 >|<
 
-instance HFunctor ((:|:) f) where
-  map' f = \case
+instance Functor1 ((:|:) f) where
+  map1 f = \case
     L a -> L a
     R b -> R $ f b
 
-instance HFoldable ((:|:) f) where
-  foldMap' f = \case
+instance Foldable1 ((:|:) f) where
+  foldMap1 f = \case
     L _ -> mempty
     R b -> f b
 
-instance HTraversable ((:|:) f) where
-  traverse' f = \case
+instance Traversable1 ((:|:) f) where
+  traverse1 f = \case
     L a -> pure $ L a
     R b -> R <$> f b
 
-instance HBifunctor (:|:) where
-  bimap' f g = \case
+instance Bifunctor1 (:|:) where
+  bimap1 f g = \case
     L a -> L $ f a
     R b -> R $ g b
 
@@ -98,23 +97,23 @@ instance Known g b => Known (f :+: g) (Right b) where
   type KnownC (f :+: g) (Right b) = Known g b
   known = R' known
 
-instance HFunctor ((:+:) f) where
-  map' f = \case
+instance Functor1 ((:+:) f) where
+  map1 f = \case
     L' a -> L' a
     R' b -> R' $ f b
 
-instance HFoldable ((:+:) f) where
-  foldMap' f = \case
+instance Foldable1 ((:+:) f) where
+  foldMap1 f = \case
     L' _ -> mempty
     R' b -> f b
 
-instance HTraversable ((:+:) f) where
-  traverse' f = \case
+instance Traversable1 ((:+:) f) where
+  traverse1 f = \case
     L' a -> pure $ L' a
     R' b -> R' <$> f b
 
-instance HBifunctor (:+:) where
-  bimap' f g = \case
+instance Bifunctor1 (:+:) where
+  bimap1 f g = \case
     L' a -> L' $ f a
     R' b -> R' $ g b
 
