@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DefaultSignatures #-}
@@ -32,6 +35,8 @@
 
 module Data.Type.Combinator where
 
+import Data.Type.Quantifier
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Tuple
@@ -40,13 +45,22 @@ import Control.Applicative
 
 -- (:.:) {{{
 
-data ((f :: l -> *) :.: (g :: k -> l)) :: k -> * where
-  Comp :: { getComp :: f (g a) } -> (f :.: g) a
-infixr 6 :.:
+newtype ((f :: l -> *) :.: (g :: k -> l)) (a :: k) = Comp
+  { getComp :: f (g a)
+  } deriving
+  ( Eq , Ord , Show , Read
+  )
 
-deriving instance Eq   (f (g a)) => Eq   ((f :.: g) a)
-deriving instance Ord  (f (g a)) => Ord  ((f :.: g) a)
-deriving instance Show (f (g a)) => Show ((f :.: g) a)
+instance Eq1 f => Eq1 (f :.: g) where
+  Comp a `eq1` Comp b = a `eq1` b
+
+instance Ord1 f => Ord1 (f :.: g) where
+  Comp a `compare1` Comp b = a `compare1` b
+
+instance Show1 f => Show1 (f :.: g) where
+  showsPrec1 d (Comp a) = showParen (d > 10)
+    $ showString "Comp "
+    . showsPrec1 11 a
 
 instance Witness p q (f (g a)) => Witness p q ((f :.: g) a) where
   type WitnessC p q ((f :.: g) a) = Witness p q (f (g a))
@@ -62,15 +76,12 @@ instance TestEquality f => TestEquality1 ((:.:) f) where
 
 -- I {{{
 
-data I :: * -> * where
-  I :: { getI :: a } -> I a
-
-deriving instance Eq   a => Eq   (I a)
-deriving instance Ord  a => Ord  (I a)
-deriving instance Show a => Show (I a)
-
-instance Functor I where
-  fmap f (I a) = I $ f a
+newtype I a = I
+  { getI :: a
+  } deriving
+  ( Eq , Ord , Show
+  , Functor , Foldable , Traversable
+  )
 
 instance Applicative I where
   pure = I
@@ -78,12 +89,6 @@ instance Applicative I where
 
 instance Monad I where
   I a >>= f = f a
-
-instance Foldable I where
-  foldMap f (I a) = f a
-
-instance Traversable I where
-  traverse f (I a) = I <$> f a
 
 instance Witness p q a => Witness p q (I a) where
   type WitnessC p q (I a) = Witness p q a
@@ -101,12 +106,23 @@ instance Num a => Num (I a) where
 
 -- C {{{
 
-data C :: * -> k -> * where
-  C :: { getC :: r } -> C r a
+newtype C r a = C
+  { getC :: r
+  } deriving
+  ( Eq , Ord , Show , Read
+  , Functor , Foldable , Traversable
+  )
 
-deriving instance Eq   r => Eq   (C r a)
-deriving instance Ord  r => Ord  (C r a)
-deriving instance Show r => Show (C r a)
+instance Eq   r => Eq1   (C r)
+instance Ord  r => Ord1  (C r)
+instance Show r => Show1 (C r)
+
+instance Read r => Read1 (C r) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (Some $ C r,s2)
+    | ("C",s1) <- lex s0
+    , (r,s2)   <- readsPrec 11 s1
+    ]
 
 instance Witness p q r => Witness p q (C r a) where
   type WitnessC p q (C r a) = Witness p q r
@@ -129,7 +145,9 @@ mapC f = C . f . getC
 
 newtype Flip p b a = Flip
   { getFlip :: p a b
-  } deriving (Eq,Ord,Show)
+  } deriving
+  ( Eq , Ord , Show , Read
+  )
 
 flipTestEquality1 :: TestEquality (p c) => Flip p a c -> Flip p b c -> Maybe (a :~: b)
 flipTestEquality1 (Flip a) (Flip b) = a =?= b
@@ -152,8 +170,14 @@ mapFlip f = Flip . f . getFlip
 
 -- Cur {{{
 
-newtype Cur (p :: (k,l) -> *) :: k -> l -> * where
-  Cur :: { getCur :: p (a#b) } -> Cur p a b
+newtype Cur (p :: (k,l) -> *) (a :: k) (b :: l) = Cur
+  { getCur :: p (a#b)
+  }
+
+deriving instance Eq   (p (a#b)) => Eq   (Cur p a b)
+deriving instance Ord  (p (a#b)) => Ord  (Cur p a b)
+deriving instance Show (p (a#b)) => Show (Cur p a b)
+deriving instance Read (p (a#b)) => Read (Cur p a b)
 
 instance Known p (a#b) => Known (Cur p a) b where
   type KnownC (Cur p a) b = Known p (a#b)
@@ -173,6 +197,18 @@ mapCur f = Cur . f . getCur
 data Uncur (p :: k -> l -> *) :: (k,l) -> * where
   Uncur :: { getUncur :: p a b } -> Uncur p (a#b)
 
+deriving instance Eq   (p (Fst x) (Snd x)) => Eq   (Uncur p x)
+deriving instance Ord  (p (Fst x) (Snd x)) => Ord  (Uncur p x)
+deriving instance Show (p (Fst x) (Snd x)) => Show (Uncur p x)
+deriving instance (x ~ (a#b), Read (p a b)) => Read (Uncur p x)
+
+instance Read2 p => Read1 (Uncur p) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (p >>-- Some . Uncur,s2)
+    | ("Uncur",s1) <- lex s0
+    , (p,s2)       <- readsPrec2 11 s1
+    ]
+
 instance (Known (p a) b,q ~ (a#b)) => Known (Uncur p) q where
   type KnownC (Uncur p) q = Known (p (Fst q)) (Snd q)
   known = Uncur known
@@ -188,8 +224,14 @@ mapUncur f (Uncur a) = Uncur $ f a
 
 -- Cur3 {{{
 
-newtype Cur3 (p :: (k,l,m) -> *) :: k -> l -> m -> * where
-  Cur3 :: { getCur3 :: p '(a,b,c) } -> Cur3 p a b c
+newtype Cur3 (p :: (k,l,m) -> *) (a :: k) (b :: l) (c :: m) = Cur3
+  { getCur3 :: p '(a,b,c)
+  }
+
+deriving instance Eq   (p '(a,b,c)) => Eq   (Cur3 p a b c)
+deriving instance Ord  (p '(a,b,c)) => Ord  (Cur3 p a b c)
+deriving instance Show (p '(a,b,c)) => Show (Cur3 p a b c)
+deriving instance Read (p '(a,b,c)) => Read (Cur3 p a b c)
 
 instance Known p '(a,b,c) => Known (Cur3 p a b) c where
   type KnownC (Cur3 p a b) c = Known p '(a,b,c)
@@ -208,6 +250,18 @@ mapCur3 f = Cur3 . f . getCur3
 
 data Uncur3 (p :: k -> l -> m -> *) :: (k,l,m) -> * where
   Uncur3 :: { getUncur3 :: p a b c } -> Uncur3 p '(a,b,c)
+
+deriving instance Eq   (p (Fst3 x) (Snd3 x) (Thd3 x)) => Eq   (Uncur3 p x)
+deriving instance Ord  (p (Fst3 x) (Snd3 x) (Thd3 x)) => Ord  (Uncur3 p x)
+deriving instance Show (p (Fst3 x) (Snd3 x) (Thd3 x)) => Show (Uncur3 p x)
+deriving instance (x ~ '(a,b,c), Read (p a b c)) => Read (Uncur3 p x)
+
+instance Read3 p => Read1 (Uncur3 p) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (p >>--- Some . Uncur3,s2)
+    | ("Uncur",s1) <- lex s0
+    , (p,s2)       <- readsPrec3 11 s1
+    ]
 
 instance (Known (p a b) c,q ~ '(a,b,c)) => Known (Uncur3 p) q where
   type KnownC (Uncur3 p) q = Known (p (Fst3 q) (Snd3 q)) (Thd3 q)
@@ -231,6 +285,18 @@ newtype Join f a = Join
 deriving instance Eq   (f a a) => Eq   (Join f a)
 deriving instance Ord  (f a a) => Ord  (Join f a)
 deriving instance Show (f a a) => Show (Join f a)
+deriving instance Read (f a a) => Read (Join f a)
+
+instance Eq2 f => Eq1 (Join f) where
+  Join a `eq1` Join b = a `eq2` b
+
+instance Ord2 f => Ord1 (Join f) where
+  Join a `compare1` Join b = a `compare2` b
+
+instance Show2 f => Show1 (Join f) where
+  showsPrec1 d (Join a) = showParen (d > 10)
+    $ showString "Join "
+    . showsPrec2 11 a
 
 instance Known (f a) a => Known (Join f) a where
   type KnownC (Join f) a = Known (f a) a
