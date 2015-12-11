@@ -31,6 +31,7 @@
 module Data.Type.Fin where
 
 import Data.Type.Nat
+import Type.Class.Higher
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
@@ -43,6 +44,20 @@ data Fin :: N -> * where
 deriving instance Eq   (Fin n)
 deriving instance Ord  (Fin n)
 deriving instance Show (Fin n)
+
+instance Eq1   Fin
+instance Ord1  Fin
+instance Show1 Fin
+
+instance Read1 Fin where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (Some FZ,s1)
+    | ("FZ",s1) <- lex s0
+    ] ++ 
+    [ (n >>- Some . FS,s2)
+    | ("FS",s1) <- lex s0
+    , (n,s2)    <- readsPrec1 11 s1
+    ]
 
 elimFin :: (forall x. p (S x))
         -> (forall x. Fin x -> p x -> p (S x))

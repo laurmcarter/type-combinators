@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -28,6 +29,7 @@
 
 module Data.Type.Sym where
 
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
@@ -37,10 +39,17 @@ import Data.Proxy
 data Sym :: Symbol -> * where
   Sym :: KnownSymbol x => Sym x
 
+deriving instance Eq   (Sym x)
+deriving instance Ord  (Sym x)
+
 instance Show (Sym x) where
   showsPrec d x = showParen (d > 0)
     $ showString "Sym :: Sym "
     . shows (symbol x)
+
+instance Eq1   Sym
+instance Ord1  Sym
+instance Show1 Sym
 
 instance TestEquality Sym where
   testEquality Sym Sym = sameSymbol Proxy Proxy

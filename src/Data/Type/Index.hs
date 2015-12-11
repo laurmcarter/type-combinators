@@ -29,6 +29,8 @@
 
 module Data.Type.Index where
 
+import Data.Type.Quantifier
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.List
@@ -40,6 +42,20 @@ data Index :: [k] -> k -> * where
 deriving instance Eq   (Index as a)
 deriving instance Ord  (Index as a)
 deriving instance Show (Index as a)
+
+instance Eq1   (Index as)
+instance Ord1  (Index as)
+instance Show1 (Index as)
+
+instance Read2 Index where
+  readsPrec2 d = readParen (d > 10) $ \s0 ->
+    [ (Some2 IZ,s1)
+    | ("IZ",s1) <- lex s0
+    ] ++
+    [ (i >>-- Some2 . IS,s2)
+    | ("IS",s1) <- lex s0
+    , (i,s2)    <- readsPrec2 11 s1
+    ]
 
 instance TestEquality (Index as) where
   testEquality = \case
