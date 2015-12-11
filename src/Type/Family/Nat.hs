@@ -27,10 +27,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Type.Family.Nat
-  ( module Type.Family.Nat
-  , type (==)
-  ) where
+module Type.Family.Nat where
 
 import Data.Type.Equality
 import Type.Family.List

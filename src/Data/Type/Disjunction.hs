@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -31,9 +32,11 @@
 
 module Data.Type.Disjunction where
 
+import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
+import Type.Family.Either
 
 -- (:|:) {{{
 
@@ -41,6 +44,47 @@ data ((f :: k -> *) :|: (g :: k -> *)) :: k -> * where
   L :: !(f a) -> (f :|: g) a
   R :: !(g a) -> (f :|: g) a
 infixr 4 :|:
+
+deriving instance (Eq   (f a), Eq   (g a)) => Eq   ((f :|: g) a)
+deriving instance (Ord  (f a), Ord  (g a)) => Ord  ((f :|: g) a)
+deriving instance (Show (f a), Show (g a)) => Show ((f :|: g) a)
+deriving instance (Read (f a), Read (g a)) => Read ((f :|: g) a)
+
+instance (Eq1 f, Eq1 g) => Eq1 (f :|: g) where
+  eq1 = \case
+    L a -> \case
+      L b -> a =#= b
+      _   -> False
+    R a -> \case
+      R b -> a =#= b
+      _   -> False
+
+instance (Ord1 f, Ord1 g) => Ord1 (f :|: g) where
+  compare1 = \case
+    L a -> \case
+      L b -> compare1 a b
+      R _ -> LT
+    R a -> \case
+      L _ -> GT
+      R b -> compare1 a b
+
+instance (Show1 f, Show1 g) => Show1 (f :|: g) where
+  showsPrec1 d = showParen (d > 10) . \case
+    L a -> showString "L "
+         . showsPrec1 11 a
+    R b -> showString "R "
+         . showsPrec1 11 b
+
+instance (Read1 f, Read1 g) => Read1 (f :|: g) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (a >>- Some . L,s2)
+    | ("L",s1) <- lex s0
+    , (a,s2)   <- readsPrec1 11 s1
+    ] ++
+    [ (a >>- Some . R,s2)
+    | ("R",s1) <- lex s0
+    , (a,s2)   <- readsPrec1 11 s1
+    ]
 
 (>|<) :: (f a -> r) -> (g a -> r) -> (f :|: g) a -> r
 f >|< g = \case
@@ -82,6 +126,46 @@ data ((f :: k -> *) :+: (g :: l -> *)) :: Either k l -> * where
   L' :: !(f a) -> (f :+: g) (Left  a)
   R' :: !(g b) -> (f :+: g) (Right b)
 infixr 4 :+:
+
+deriving instance (Eq   (f (FromLeft e)), Eq   (g (FromRight e))) => Eq   ((f :+: g) e)
+deriving instance (Ord  (f (FromLeft e)), Ord  (g (FromRight e))) => Ord  ((f :+: g) e)
+deriving instance (Show (f (FromLeft e)), Show (g (FromRight e))) => Show ((f :+: g) e)
+
+instance (Eq1 f, Eq1 g) => Eq1 (f :+: g) where
+  eq1 = \case
+    L' a -> \case
+      L' b -> a =#= b
+      _    -> False
+    R' a -> \case
+      R' b -> a =#= b
+      _    -> False
+
+instance (Ord1 f, Ord1 g) => Ord1 (f :+: g) where
+  compare1 = \case
+    L' a -> \case
+      L' b -> compare1 a b
+      _    -> LT
+    R' a -> \case
+      R' b -> compare1 a b
+      _    -> GT
+
+instance (Show1 f, Show1 g) => Show1 (f :+: g) where
+  showsPrec1 d = showParen (d > 10) . \case
+    L' a -> showString "L' "
+          . showsPrec1 11 a
+    R' b -> showString "R' "
+          . showsPrec1 11 b
+
+instance (Read1 f, Read1 g) => Read1 (f :+: g) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (a >>- Some . L',s2)
+    | ("L'",s1) <- lex s0
+    , (a,s2)    <- readsPrec1 11 s1
+    ] ++
+    [ (a >>- Some . R',s2)
+    | ("R'",s1) <- lex s0
+    , (a,s2)    <- readsPrec1 11 s1
+    ]
 
 (>+<) :: (forall a. (e ~ Left a) => f a -> r) -> (forall b. (e ~ Right b) => g b -> r) -> (f :+: g) e -> r
 f >+< g = \case

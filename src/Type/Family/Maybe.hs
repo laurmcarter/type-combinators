@@ -25,10 +25,7 @@
 -- Convenient type families for working with type-level @Maybe@s.
 ----------------------------------------------------------------------------
 
-module Type.Family.Maybe
-  ( module Type.Family.Maybe
-  , type (==)
-  ) where
+module Type.Family.Maybe where
 
 import Type.Family.Constraint
 import Type.Family.Monoid
