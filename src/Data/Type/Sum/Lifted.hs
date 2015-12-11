@@ -1,9 +1,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -14,7 +12,7 @@
 {-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Type.Sum.Order2
+-- Module      :  Data.Type.Sum.Lifted
 -- Copyright   :  Copyright (C) 2015 Kyle Carter
 -- License     :  BSD3
 --
@@ -28,12 +26,10 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Type.Sum.Order2 where
+module Data.Type.Sum.Lifted where
 
 import Data.Type.Index
-
 import Type.Class.Witness
-
 import Type.Family.List
 
 data FSum :: [k -> *] -> k -> * where

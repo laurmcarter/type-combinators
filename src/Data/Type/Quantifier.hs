@@ -1,9 +1,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -33,7 +31,6 @@
 
 module Data.Type.Quantifier where
 
-import Data.Type.Combinator
 import Type.Family.Constraint
 
 -- Some {{{
@@ -65,13 +62,48 @@ infixl 1 >>-
 withSome :: (forall a. f a -> r) -> Some f -> r
 withSome f (Some a) = f a
 
-onSome :: (forall a. f a -> g b) -> Some f -> Some g
+onSome :: (forall a. f a -> g x) -> Some f -> Some g
 onSome f (Some a) = Some (f a)
 
-type Some2 f = Some (Some :.: f)
+-- }}}
 
-pattern Some2 :: f a b -> Some2 f
-pattern Some2 a = Some (Comp (Some a))
+-- Some2 {{{
+
+data Some2 (f :: k -> l -> *) :: * where
+  Some2 :: f a b -> Some2 f
+
+some2 :: Some2 f -> (forall a b. f a b -> r) -> r
+some2 (Some2 a) f = f a
+
+(>>--) :: Some2 f -> (forall a b. f a b -> r) -> r
+(>>--) = some2
+infixl 1 >>--
+
+withSome2 :: (forall a b. f a b -> r) -> Some2 f -> r
+withSome2 f (Some2 a) = f a
+
+onSome2 :: (forall a b. f a b -> g x y) -> Some2 f -> Some2 g
+onSome2 f (Some2 a) = Some2 (f a)
+
+-- }}}
+
+-- Some3 {{{
+
+data Some3 (f :: k -> l -> m -> *) :: * where
+  Some3 :: f a b c -> Some3 f
+
+some3 :: Some3 f -> (forall a b c. f a b c -> r) -> r
+some3 (Some3 a) f = f a
+
+(>>---) :: Some3 f -> (forall a b c. f a b c -> r) -> r
+(>>---) = some3
+infixl 1 >>---
+
+withSome3 :: (forall a b c. f a b c -> r) -> Some3 f -> r
+withSome3 f (Some3 a) = f a
+
+onSome3 :: (forall a b c. f a b c -> g x y z) -> Some3 f -> Some3 g
+onSome3 f (Some3 a) = Some3 (f a)
 
 -- }}}
 
@@ -89,19 +121,16 @@ infixl 1 >>~
 
 -- }}}
 
--- Every {{{
+-- EveryN {{{
 
 data Every (f :: k -> *) :: * where
-  Every :: { instEvery :: forall (a :: k). f a } -> Every f
+  Every :: { instEvery :: forall a. f a } -> Every f
 
--- | A data type for natural transformations.
-data (f :: k -> *) :-> (g :: k -> *) where
-  NT :: (forall a. f a -> g a) -> f :-> g
-infixr 4 :->
+data Every2 (f :: k -> l -> *) :: * where
+  Every2 :: { instEvery2 :: forall a b. f a b } -> Every2 f
 
-data (p :: k -> l -> *) :--> (q :: k -> l -> *) where
-  NT2 :: (forall a b. p a b -> q a b) -> p :--> q
-infixr 4 :-->
+data Every3 (f :: k -> l -> m -> *) :: * where
+  Every3 :: { instEvery3 :: forall a b c. f a b c } -> Every3 f
 
 -- }}}
 

@@ -32,7 +32,7 @@
 
 module Data.Type.Conjunction where
 
-import Type.Class.HFunctor
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Tuple
@@ -72,17 +72,17 @@ instance DecEquality f => DecEquality (f :&: g) where
 instance (Known f a, Known g a) => Known (f :&: g) a where
   known = known :&: known
 
-instance HFunctor ((:&:) f) where
-  map' f (a :&: b) = a :&: f b
+instance Functor1 ((:&:) f) where
+  map1 f (a :&: b) = a :&: f b
 
-instance HFoldable ((:&:) f) where
-  foldMap' f (_ :&: b) = f b
+instance Foldable1 ((:&:) f) where
+  foldMap1 f (_ :&: b) = f b
 
-instance HTraversable ((:&:) f) where
-  traverse' f (a :&: b) = (:&:) a <$> f b
+instance Traversable1 ((:&:) f) where
+  traverse1 f (a :&: b) = (:&:) a <$> f b
 
-instance HBifunctor (:&:) where
-  bimap' f g (a :&: b) = f a :&: g b
+instance Bifunctor1 (:&:) where
+  bimap1 f g (a :&: b) = f a :&: g b
 
 instance (Witness p q (f a), Witness s t (g a)) => Witness (p,s) (q,t) ((f :&: g) a) where
   type WitnessC (p,s) (q,t) ((f :&: g) a) = (Witness p q (f a), Witness s t (g a))
@@ -123,17 +123,17 @@ curryPar f a b = f (a :*: b)
 instance (p ~ (a#b), Known f a, Known g b) => Known (f :*: g) p where
   known = known :*: known
 
-instance HFunctor ((:*:) f) where
-  map' f (a :*: b) = a :*: f b
+instance Functor1 ((:*:) f) where
+  map1 f (a :*: b) = a :*: f b
 
-instance HFoldable ((:*:) f) where
-  foldMap' f (_ :*: b) = f b
+instance Foldable1 ((:*:) f) where
+  foldMap1 f (_ :*: b) = f b
 
-instance HTraversable ((:*:) f) where
-  traverse' f (a :*: b) = (:*:) a <$> f b
+instance Traversable1 ((:*:) f) where
+  traverse1 f (a :*: b) = (:*:) a <$> f b
 
-instance HBifunctor (:*:) where
-  bimap' f g (a :*: b) = f a :*: g b
+instance Bifunctor1 (:*:) where
+  bimap1 f g (a :*: b) = f a :*: g b
 
 _fst :: (a#b) :~: (c#d) -> a :~: c
 _fst Refl = Refl
