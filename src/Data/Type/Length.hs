@@ -29,6 +29,8 @@
 
 module Data.Type.Length where
 
+import Data.Type.Quantifier
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Family.List
 
@@ -39,6 +41,20 @@ data Length :: [k] -> * where
 deriving instance Eq   (Length as)
 deriving instance Ord  (Length as)
 deriving instance Show (Length as)
+
+instance Eq1   Length
+instance Ord1  Length
+instance Show1 Length
+
+instance Read1 Length where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (Some LZ,s1)
+    | ("LZ",s1) <- lex s0
+    ] ++
+    [ (l >>- Some . LS,s2)
+    | ("LS",s1) <- lex s0
+    , (l,s2) <- readsPrec1 11 s1
+    ]
 
 instance Known Length Ø where
   known = LZ

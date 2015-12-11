@@ -32,6 +32,7 @@
 module Data.Type.Sum where
 
 import Data.Type.Index
+import Data.Type.Quantifier
 
 import Type.Class.Higher
 import Type.Class.Witness
@@ -48,6 +49,42 @@ deriving instance
   , ListC (Ord  <$> f <$> as)
   ) => Ord  (Sum f as)
 deriving instance ListC (Show <$> f <$> as) => Show (Sum f as)
+
+instance Eq1 f => Eq1 (Sum f) where
+  eq1 = \case
+    InL a -> \case
+      InL b -> a =#= b
+      _     -> False
+    InR a -> \case
+      InR b -> a =#= b
+      _     -> False
+
+instance Ord1 f => Ord1 (Sum f) where
+  compare1 = \case
+    InL a -> \case
+      InL b -> compare1 a b
+      _     -> LT
+    InR a -> \case
+      InR b -> compare1 a b
+      _     -> GT
+
+instance Show1 f => Show1 (Sum f) where
+  showsPrec1 d = showParen (d > 10) . \case
+    InL a -> showString "InL "
+           . showsPrec1 11 a
+    InR b -> showString "InR "
+           . showsPrec1 11 b
+
+instance Read1 f => Read1 (Sum f) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (a >>- Some . InL,s2)
+    | ("InL",s1) <- lex s0
+    , (a,s2) <- readsPrec1 11 s1
+    ] ++
+    [ (a >>- Some . InR,s2)
+    | ("InR",s1) <- lex s0
+    , (a,s2) <- readsPrec1 11 s1
+    ]
 
 -- | There are no possible values of the type @Sum f Ø@.
 nilSum :: Sum f Ø -> Void

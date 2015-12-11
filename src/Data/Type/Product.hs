@@ -62,6 +62,44 @@ deriving instance
   ) => Ord  (Prod f as)
 deriving instance ListC (Show <$> f <$> as) => Show (Prod f as)
 
+instance Eq1 f => Eq1 (Prod f) where
+  eq1 = \case
+    Ø -> \case
+      Ø -> True
+      _ -> False
+    a :< as -> \case
+      b :< bs -> a =#= b && as =#= bs
+      _       -> False
+
+instance Ord1 f => Ord1 (Prod f) where
+  compare1 = \case
+    Ø -> \case
+      Ø -> EQ
+      _ -> LT
+    a :< as -> \case
+      b :< bs -> compare1 a b `mappend` compare1 as bs
+      _       -> GT
+
+instance Show1 f => Show1 (Prod f) where
+  showsPrec1 d = \case
+    Ø -> showString "Ø"
+    a :< as -> showParen (d > 5)
+      $ showsPrec1 6 a
+      . showString " :< "
+      . showsPrec1 6 as
+
+instance Read1 f => Read1 (Prod f) where
+  readsPrec1 d s0 =
+    [ (Some Ø,s1)
+    | ("Ø",s1) <- lex s0
+    ] ++ readParen (d > 5) ( \s1 ->
+      [ (x >>- \a -> xs >>- \as -> Some $ a :< as,s4)
+      | (x,s2) <- readsPrec1 6 s1
+      , (":<",s3) <- lex s2
+      , (xs,s4) <- readsPrec1 5 s3
+      ]
+    ) s0
+
 instance TestEquality f => TestEquality (Prod f) where
   testEquality = \case
     Ø -> \case

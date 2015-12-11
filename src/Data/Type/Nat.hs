@@ -29,6 +29,8 @@
 module Data.Type.Nat where
 
 import Data.Type.Equality
+import Data.Type.Quantifier
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
@@ -42,6 +44,20 @@ data Nat :: N -> * where
 deriving instance Eq   (Nat n)
 deriving instance Ord  (Nat n)
 deriving instance Show (Nat n)
+
+instance Eq1   Nat
+instance Ord1  Nat
+instance Show1 Nat
+
+instance Read1 Nat where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (Some Z_,s1)
+    | ("Z_",s1) <- lex s0
+    ] ++
+    [ (n >>- Some . S_,s2)
+    | ("S_",s1) <- lex s0
+    , (n,s2) <- readsPrec1 11 s1
+    ]
 
 -- | @'Z_'@ is the canonical construction of a @'Nat' Z@.
 instance Known Nat Z where
