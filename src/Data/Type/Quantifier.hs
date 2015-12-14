@@ -59,6 +59,10 @@ some (Some a) f = f a
 (>>-) = some
 infixl 1 >>-
 
+(>->) :: (forall x. f x -> Some g) -> (forall x. g x -> Some h) -> f a -> Some h
+(f >-> g) a = f a >>- g
+infixr 1 >->
+
 withSome :: (forall a. f a -> r) -> Some f -> r
 withSome f (Some a) = f a
 
@@ -79,6 +83,10 @@ some2 (Some2 a) f = f a
 (>>--) = some2
 infixl 1 >>--
 
+(>-->) :: (forall x y. f x y -> Some2 g) -> (forall x y. g x y -> Some2 h) -> f a b -> Some2 h
+(f >--> g) a = f a >>-- g
+infixr 1 >-->
+
 withSome2 :: (forall a b. f a b -> r) -> Some2 f -> r
 withSome2 f (Some2 a) = f a
 
@@ -98,6 +106,10 @@ some3 (Some3 a) f = f a
 (>>---) :: Some3 f -> (forall a b c. f a b c -> r) -> r
 (>>---) = some3
 infixl 1 >>---
+
+(>--->) :: (forall x y z. f x y z -> Some3 g) -> (forall x y z. g x y z -> Some3 h) -> f a b c -> Some3 h
+(f >---> g) a = f a >>--- g
+infixr 1 >--->
 
 withSome3 :: (forall a b c. f a b c -> r) -> Some3 f -> r
 withSome3 f (Some3 a) = f a
