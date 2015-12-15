@@ -44,7 +44,7 @@ deriving instance Ord  (Sym x)
 
 instance Show (Sym x) where
   showsPrec d x = showParen (d > 0)
-    $ showString "Sym :: Sym "
+    $ showString "Sym "
     . shows (symbol x)
 
 instance Eq1   Sym

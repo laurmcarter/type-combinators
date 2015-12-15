@@ -1,5 +1,5 @@
 name: type-combinators
-version: 0.2.0.0
+version: 0.2.0.1
 category: Data
 synopsis: A collection of data types for type-level programming
 cabal-version: >=1.10
@@ -21,6 +21,7 @@ library
         Data.Type.Conjunction
         Data.Type.Disjunction
         Data.Type.Fin
+        Data.Type.Fin.Indexed
         Data.Type.Index
         Data.Type.Length
         Data.Type.Nat

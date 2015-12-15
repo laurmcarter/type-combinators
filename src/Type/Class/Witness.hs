@@ -106,6 +106,10 @@ class WitnessC p q t => Witness (p :: Constraint) (q :: Constraint) (t :: *) | t
   (\\) :: p => (q => r) -> t -> r
 infixl 1 \\
 
+(//) :: (Witness p q t, p) => t -> (q => r) -> r
+t // r = r \\ t
+infixr 0 //
+
 -- | Convert a 'Witness' to a canonical reified 'Constraint'.
 witnessed :: Witness ØC q t => t -> Wit q
 witnessed t = Wit \\ t
@@ -220,6 +224,12 @@ instance c a => Known (Wit1 c) a where
   Just t -> (\\ t)
   _      -> \_ -> Nothing
 infixr 0 //?
+
+(//?+) :: (Witness p q t, p) => Either e t -> (q => Either e r) -> Either e r
+(//?+) = \case
+  Left  e -> \_ -> Left e
+  Right t -> (\\ t)
+infixr 0 //?+
 
 witMaybe :: (Witness p q t, p) => Maybe t -> (q => Maybe r) -> Maybe r -> Maybe r
 witMaybe mt y n = case mt of
