@@ -85,6 +85,12 @@ instance TestEquality Nat where
       Z_   -> Nothing
       S_ y -> testEquality x y //? qed
 
+pred' :: Nat (S x) -> Nat x
+pred' (S_ x) = x
+
+onNatPred :: (Nat x -> Nat y) -> Nat (S x) -> Nat (S y)
+onNatPred f (S_ x) = S_ $ f x
+
 _Z :: Z :~: Z
 _Z = Refl
 
