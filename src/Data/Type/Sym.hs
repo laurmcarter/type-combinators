@@ -29,6 +29,7 @@
 
 module Data.Type.Sym where
 
+import Data.Type.Boolean
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
@@ -53,6 +54,10 @@ instance Show1 Sym
 
 instance TestEquality Sym where
   testEquality Sym Sym = sameSymbol Proxy Proxy
+
+instance BoolEquality Sym where
+  type BoolEqC Sym a b = Known Boolean (a == b)
+  Sym .== Sym = known
 
 instance KnownSymbol x => Known Sym x where
   type KnownC Sym x = KnownSymbol x

@@ -30,6 +30,8 @@
 module Type.Family.Nat where
 
 import Data.Type.Equality
+import Type.Family.Bool
+import Type.Family.Constraint
 import Type.Family.List
 import Type.Class.Witness
 
@@ -111,6 +113,26 @@ type family Ix (x :: N) (as :: [k]) :: k where
 
 ixCong :: (x ~ y,as ~ bs) :- (Ix x as ~ Ix y bs)
 ixCong = Sub Wit
+
+type family (x :: N) < (y :: N) :: Bool where
+  Z   < Z   = False
+  Z   < S y = True
+  S x < Z   = False
+  S x < S y = x < y
+infix 4 <
+
+type x <= y = (x == y) || (x < y)
+infix 4 <=
+
+type family (x :: N) > (y :: N) :: Bool where
+  Z   > Z   = False
+  Z   > S y = False
+  S x > Z   = True
+  S x > S y = x > y
+infix 4 >
+
+type x >= y = (x == y) || (x > y)
+infix 4 >=
 
 -- | Convenient aliases for low-value Peano numbers.
 type N0  = Z

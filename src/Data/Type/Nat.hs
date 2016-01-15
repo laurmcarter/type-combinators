@@ -28,6 +28,7 @@
 
 module Data.Type.Nat where
 
+import Data.Type.Boolean
 import Data.Type.Equality
 import Data.Type.Quantifier
 import Type.Class.Higher
@@ -84,6 +85,15 @@ instance TestEquality Nat where
     S_ x -> \case
       Z_   -> Nothing
       S_ y -> testEquality x y //? qed
+
+instance BoolEquality Nat where
+  (.==) = \case
+    Z_ -> \case
+      Z_   -> True_
+      S_ _ -> False_
+    S_ x -> \case
+      Z_   -> False_
+      S_ y -> x .== y
 
 pred' :: Nat (S x) -> Nat x
 pred' (S_ x) = x

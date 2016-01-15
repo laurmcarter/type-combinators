@@ -14,7 +14,7 @@
 {-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Type.Family.Constraint
+-- Module      :  Type.Family.Bool
 -- Copyright   :  Copyright (C) 2015 Kyle Carter
 -- License     :  BSD3
 --
@@ -22,25 +22,28 @@
 -- Stability   :  experimental
 -- Portability :  RankNTypes
 --
--- Reexports the kind 'GHC.Exts.Constraint', as well as some
--- conveniences for working with 'Constraint's.
+-- Convenient type families for working with type-level @Bool@s.
 ----------------------------------------------------------------------------
 
-module Type.Family.Constraint
-  ( module Type.Family.Constraint
-  , Constraint
+module Type.Family.Bool
+  ( module Type.Family.Bool
+  , module Exports
   ) where
 
-import GHC.Exts (Constraint)
+import Type.Family.Constraint
+import Type.Class.Witness as Exports (type (==))
+import Data.Type.Bool as Exports (type Not, type (||), type (&&))
 
--- | The empty 'Constraint'.
-type ØC   = (() :: Constraint)
-type Fail = (True ~ False)
+type family BoolC (b :: Bool) :: Constraint where
+  BoolC True  = ØC
+  BoolC False = Fail
 
-class IffC b t f => Iff (b :: Bool) (t :: Constraint) (f :: Constraint) where
-  type IffC b t f :: Constraint
-instance t => Iff True  t f where
-  type IffC True  t f = t
-instance f => Iff False t f where
-  type IffC False t f = f
+type a ==> b = Not a || b
+infixr 1 ==>
+
+type a <==> b = a == b
+infixr 1 <==>
+
+type a ^^ b = (a || b) && Not (a && b)
+infixr 4 ^^
 

@@ -36,6 +36,7 @@ import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Tuple
+import Data.Type.Boolean
 
 -- (:&:) {{{
 
@@ -78,9 +79,6 @@ uncurryFan f (a :&: b) = f a b
 
 curryFan :: ((f :&: g) a -> r) -> f a -> g a -> r
 curryFan f a b = f (a :&: b)
-
-instance DecEquality f => DecEquality (f :&: g) where
-  decideEquality (a :&: _) (c :&: _) = decideEquality a c
 
 instance (Known f a, Known g a) => Known (f :&: g) a where
   known = known :&: known
@@ -158,6 +156,11 @@ _fst Refl = Refl
 
 _snd :: (a#b) :~: (c#d) -> b :~: d
 _snd Refl = Refl
+
+{-
+instance (BoolEquality f, BoolEquality g) => BoolEquality (f :*: g) where
+  (a :*: b) .== (c :*: d) = a .== c .&& b .== d
+-}
 
 instance (DecEquality f, DecEquality g) => DecEquality (f :*: g) where
   decideEquality (a :*: b) (c :*: d) = case decideEquality a c of

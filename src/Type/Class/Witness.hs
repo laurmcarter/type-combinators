@@ -88,6 +88,9 @@ instance Category (:-) where
   id              = Sub Wit
   Sub bc . Sub ab = Sub $ bc \\ ab
 
+transC :: (b :- c) -> (a :- b) -> a :- c
+transC = (.)
+
 -- }}}
 
 -- Witness {{{
@@ -176,6 +179,9 @@ class Forall (p :: k -> Constraint) (q :: k -> Constraint) where
 
 -- Initial/Terminal {{{
 
+toEquality :: (a ~ b) :- (c ~ d) -> a :~: b -> c :~: d
+toEquality p = \Refl -> Refl \\ p
+
 commute :: (a ~ b) :- (b ~ a)
 commute = Sub Wit
 
@@ -189,10 +195,10 @@ falso = Sub Wit
 top :: a :- ØC
 top = Sub Wit
 
-type Fail = (True ~ False)
-
 bottom :: Fail :- c
 bottom = falso
+
+
 
 instance Witness ØC c (Wit c) where
   r \\ Wit = r
@@ -241,6 +247,14 @@ qed = Just Refl
 
 impossible :: a -> Void
 impossible = unsafeCoerce
+
+exFalso :: Wit Fail -> a
+exFalso p = castWith q ()
+  where
+  q :: () :~: a
+  q = toEquality (contraC r) Refl
+  r :: (b ~ b) :- Fail
+  r = Sub p
 
 (=?=) :: TestEquality f => f a -> f b -> Maybe (a :~: b)
 (=?=) = testEquality

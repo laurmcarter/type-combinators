@@ -40,7 +40,7 @@ infixr 5 :<
 -- | Type-level singleton list.
 type Only a = '[a]
 
--- Null,Append {{{
+-- Null,Append,Concat {{{
 
 type family Null (as :: [k]) :: Bool where
   Null Ø         = True
@@ -60,6 +60,13 @@ infixr 5 ++
 
 appendCong :: (a ~ b,c ~ d) :- ((a ++ c) ~ (b ++ d))
 appendCong = Sub Wit
+
+type family Concat (ls :: [[k]]) :: [k] where
+  Concat Ø         = Ø
+  Concat (l :< ls) = l ++ Concat ls
+
+concatCong :: (as ~ bs) :- (Concat as ~ Concat bs)
+concatCong = Sub Wit
 
 -- }}}
 
