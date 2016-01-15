@@ -69,6 +69,15 @@ withSome f (Some a) = f a
 onSome :: (forall a. f a -> g x) -> Some f -> Some g
 onSome f (Some a) = Some (f a)
 
+msome :: Monad m => f a -> m (Some f)
+msome = return . Some
+
+(>>=-) :: Monad m => m (Some f) -> (forall a. f a -> m r) -> m r
+m >>=- f = do
+  s <- m
+  s >>- f
+infixl 1 >>=-
+
 -- }}}
 
 -- Some2 {{{
@@ -92,6 +101,15 @@ withSome2 f (Some2 a) = f a
 
 onSome2 :: (forall a b. f a b -> g x y) -> Some2 f -> Some2 g
 onSome2 f (Some2 a) = Some2 (f a)
+
+msome2 :: Monad m => f a b -> m (Some2 f)
+msome2 = return . Some2
+
+(>>=--) :: Monad m => m (Some2 f) -> (forall a b. f a b -> m r) -> m r
+m >>=-- f = do
+  s <- m
+  s >>-- f
+infixl 1 >>=--
 
 -- }}}
 
@@ -117,6 +135,15 @@ withSome3 f (Some3 a) = f a
 onSome3 :: (forall a b c. f a b c -> g x y z) -> Some3 f -> Some3 g
 onSome3 f (Some3 a) = Some3 (f a)
 
+msome3 :: Monad m => f a b c -> m (Some3 f)
+msome3 = return . Some3
+
+(>>=---) :: Monad m => m (Some3 f) -> (forall a b c. f a b c -> m r) -> m r
+m >>=--- f = do
+  s <- m
+  s >>--- f
+infixl 1 >>=---
+
 -- }}}
 
 -- SomeC {{{
@@ -131,6 +158,15 @@ someC (SomeC a) f = f a
 (>>~) = someC
 infixl 1 >>~
 
+msomeC :: (Monad m, c a) => f a -> m (SomeC c f)
+msomeC = return . SomeC
+
+(>>=~) :: Monad m => m (SomeC c f) -> (forall a. c a => f a -> m r) -> m r
+m >>=~ f = do
+  s <- m
+  s >>~ f
+infixl 1 >>=~
+
 -- }}}
 
 -- EveryN {{{
@@ -143,6 +179,10 @@ data Every2 (f :: k -> l -> *) :: * where
 
 data Every3 (f :: k -> l -> m -> *) :: * where
   Every3 :: { instEvery3 :: forall a b c. f a b c } -> Every3 f
+
+data EveryC (c :: k -> Constraint) (f :: k -> *) :: * where
+  EveryC :: { instEveryC :: forall a. c a => f a }
+         -> EveryC c f
 
 -- }}}
 

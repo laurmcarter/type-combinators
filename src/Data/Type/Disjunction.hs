@@ -167,6 +167,18 @@ instance (Read1 f, Read1 g) => Read1 (f :+: g) where
     , (a,s2)    <- readsPrec1 11 s1
     ]
 
+{-
+instance (DecEquality f, DecEquality g) => DecEquality (f :+: g) where
+  decideEquality = \case
+    L' a -> \case
+      L' b -> decCase (decideEquality a b) (\Refl -> Proven Refl) (\contra -> Refuted $ contra . toEquality fromLeftCong)
+      R' _ -> Refuted $
+    R' a -> \case
+      L' b -> Refuted undefined
+      R' b -> undefined
+-}
+
+
 (>+<) :: (forall a. (e ~ Left a) => f a -> r) -> (forall b. (e ~ Right b) => g b -> r) -> (f :+: g) e -> r
 f >+< g = \case
   L' a -> f a

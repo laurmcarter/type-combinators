@@ -1,5 +1,5 @@
 name: type-combinators
-version: 0.2.0.1
+version: 0.2.2.0
 category: Data
 synopsis: A collection of data types for type-level programming
 cabal-version: >=1.10
@@ -17,6 +17,7 @@ Source-Repository head
 
 library
     exposed-modules:
+        Data.Type.Boolean
         Data.Type.Combinator
         Data.Type.Conjunction
         Data.Type.Disjunction
@@ -25,6 +26,7 @@ library
         Data.Type.Index
         Data.Type.Length
         Data.Type.Nat
+        Data.Type.Nat.Inequality
         Data.Type.Option
         Data.Type.Product
         Data.Type.Product.Lifted
@@ -36,6 +38,7 @@ library
         Type.Class.Higher
         Type.Class.Known
         Type.Class.Witness
+        Type.Family.Bool
         Type.Family.Constraint
         Type.Family.Either
         Type.Family.List
