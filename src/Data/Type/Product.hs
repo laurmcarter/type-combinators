@@ -230,6 +230,15 @@ select = \case
   Ø     -> pure Ø
   x:<xs -> (:<) <$> index x <*> select xs
 
+indexes :: forall as. Known Length as => Prod (Index as) as
+indexes = indexes' known
+
+indexes' :: Length as -> Prod (Index as) as
+indexes' = \case
+  LZ   -> Ø
+  LS l -> IZ :< map1 IS (indexes' l)
+
+
 instance Functor1 Prod where
   map1 f = \case
     Ø -> Ø
