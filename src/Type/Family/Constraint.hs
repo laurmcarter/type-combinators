@@ -44,3 +44,6 @@ instance t => Iff True  t f where
 instance f => Iff False t f where
   type IffC False t f = f
 
+class d (c a) => Comp (d :: l -> Constraint) (c :: k -> l) (a :: k)
+instance d (c a) => Comp d c a
+

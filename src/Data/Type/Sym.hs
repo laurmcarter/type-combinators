@@ -55,10 +55,6 @@ instance Show1 Sym
 instance TestEquality Sym where
   testEquality Sym Sym = sameSymbol Proxy Proxy
 
-instance BoolEquality Sym where
-  type BoolEqC Sym a b = Known Boolean (a == b)
-  Sym .== Sym = known
-
 instance KnownSymbol x => Known Sym x where
   type KnownC Sym x = KnownSymbol x
   known = Sym

@@ -38,6 +38,13 @@ data Option (f :: k -> *) :: Maybe k -> * where
   Nothing_ :: Option f Nothing
   Just_    :: !(f a) -> Option f (Just a)
 
+deriving instance MaybeC (Eq   <$> f <$> m) => Eq   (Option f m)
+deriving instance
+  ( MaybeC (Eq   <$> f <$> m)
+  , MaybeC (Ord  <$> f <$> m)
+  ) => Ord (Option f m)
+deriving instance MaybeC (Show <$> f <$> m) => Show (Option f m)
+
 -- | Eliminator for @'Option' f@.
 option :: (forall a. (m ~ Just a) => f a -> r) -> ((m ~ Nothing) => r) -> Option f m -> r
 option j n = \case

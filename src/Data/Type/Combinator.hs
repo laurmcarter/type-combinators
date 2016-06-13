@@ -35,13 +35,26 @@
 
 module Data.Type.Combinator where
 
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Tuple
 
 import Control.Applicative
+
+data Comp1 (f :: l -> m -> *) (g :: k -> l) :: k -> m -> * where
+  Comp1 :: { getComp1 :: !(f (g h) a)
+           }
+        -> Comp1 f g h a
+
+instance (Functor1 f, Functor1 g) => Functor1 (Comp1 (f :: (l -> *) -> m -> *) (g :: (k -> *) -> l -> *)) where
+  map1 f (Comp1 a) = Comp1 $ map1 (map1 f) a
+
+{-
+instance (IxFunctor1 i f, IxFunctor1 j g) => IxFunctor1 (IxComp i j) (Comp1 (f :: (l -> *) -> m -> *) (g :: (k -> *) -> l -> *)) where
+  imap1 f = Comp1 . imap1 (\i -> imap1 $ \j -> f $ IxComp i j) . getComp1
+-}
 
 -- (:.:) {{{
 
@@ -310,4 +323,23 @@ mapJoin :: (f a a -> g b b) -> Join f a -> Join g b
 mapJoin f = Join . f . getJoin
 
 -- }}}
+
+data Conj (t :: (k -> *) -> l -> *) (f :: k -> m -> *) :: l -> m -> * where
+  Conj :: t (Flip f b) a
+       -> Conj t f a b
+
+{-
+data Conj2 (t :: (k -> l -> *) -> m -> n -> *) (f :: k -> l -> o -> *) :: m -> n -> o -> * where
+  Conj2 :: t 
+       -> Conj2 t f a b c
+-}
+
+data LL (c :: k -> *) :: l -> (l -> k) -> * where
+  LL :: { getLL :: c (f a)
+        }
+     -> LL c a f
+
+data RR (c :: k -> *) :: (l -> k) -> l -> * where
+  RR :: { getRR :: c (f a) }
+     -> RR c f a
 

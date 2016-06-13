@@ -29,10 +29,11 @@
 
 module Data.Type.Index where
 
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
+import Type.Family.Constraint
 import Type.Family.List
 
 data Index :: [k] -> k -> * where
@@ -74,15 +75,13 @@ elimIndex z s = \case
   IZ   -> z
   IS x -> s x $ elimIndex z s x
 
-ixNil :: Index Ø a -> Void
-ixNil = impossible
+ixNil :: Index Ø a -> b
+ixNil = absurd . impossible
 
 onIxPred :: (Index as a -> Index bs a) -> Index (b :< as) a -> Index (b :< bs) a
 onIxPred f = \case
   IZ   -> IZ
   IS x -> IS $ f x
-
--- Elem {{{
 
 type a ∈ as = Elem as a
 infix 6 ∈
@@ -91,17 +90,45 @@ class Elem (as :: [k]) (a :: k) where
   elemIndex :: Index as a
 
 instance {-# OVERLAPPING #-} Elem (a :< as) a where
-  elemIndex = IZ
+  elemIndex   = IZ
 
 instance {-# OVERLAPPABLE #-} Elem as a => Elem (b :< as) a where
   elemIndex = IS elemIndex
 
+instance Witness ØC (Elem as a) (Index as a) where
+  (\\) r = \case
+    IZ   -> r
+    IS x -> r \\ x
 
-instance {-# OVERLAPPING #-} Known (Index (a :< as)) a where
-  known = IZ
+instance (a ∈ as) => Known (Index as) a where
+  type KnownC (Index as) a = (a ∈ as)
+  known = elemIndex
 
-instance {-# OVERLAPPABLE #-} Known (Index as) a => Known (Index (b :< as)) a where
-  known = IS known
+class EveryC c as => Every (c :: k -> Constraint) (as :: [k]) where
+  type EveryC c as :: Constraint
+  every :: Index as a -> Wit (c a)
 
--- }}}
+instance Every c Ø where
+  type EveryC c Ø = ØC
+  every = ixNil
+
+instance (c a, Every c as) => Every c (a :< as) where
+  type EveryC c (a :< as) = (c a, Every c as)
+  every = \case
+    IZ   -> Wit
+    IS x -> every x
+
+class ListC ((c <$> xs) <&> y)
+  => Every2 (c :: k -> l -> Constraint) (xs :: [k]) (y :: l) where
+  every2 :: Index xs x -> Wit (c x y)
+
+instance Every2 c Ø y where
+  every2 = ixNil
+
+instance (c x y, Every2 c xs y) => Every2 c (x :< xs) y where
+  every2 = \case
+    IZ   -> Wit
+    IS x -> every2 x
+
+
 

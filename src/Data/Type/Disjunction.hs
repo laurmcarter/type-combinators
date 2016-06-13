@@ -32,7 +32,7 @@
 
 module Data.Type.Disjunction where
 
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness

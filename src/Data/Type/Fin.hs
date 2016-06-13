@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -32,10 +33,11 @@ module Data.Type.Fin where
 
 import Data.Type.Nat
 import Type.Class.Higher
+import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 
 data Fin :: N -> * where
   FZ :: Fin (S n)
@@ -58,6 +60,22 @@ instance Read1 Fin where
     | ("FS",s1) <- lex s0
     , (n,s2)    <- readsPrec1 11 s1
     ]
+
+instance (Known Nat n, Pos n) => Enum (Fin n) where
+  toEnum n
+    | n <= 0 = FZ
+    | otherwise = case (known :: Nat n) of
+      S_ Z_     -> FZ
+      S_ (S_{}) -> FS $ toEnum (n-1)
+      _         -> error "impossible"
+  fromEnum = fin
+
+instance (Known Nat n, Pos n) => Bounded (Fin n) where
+  minBound = FZ
+  maxBound = case (known :: Nat n) of
+    S_ Z_     -> FZ
+    S_ (S_{}) -> FS $ maxBound
+    _         -> error "impossible"
 
 elimFin :: (forall x. p (S x))
         -> (forall x. Fin x -> p x -> p (S x))

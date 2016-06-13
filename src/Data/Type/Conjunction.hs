@@ -32,17 +32,17 @@
 
 module Data.Type.Conjunction where
 
+import Data.Type.Index.Trans
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Tuple
-import Data.Type.Boolean
 
 -- (:&:) {{{
 
 data ((f :: k -> *) :&: (g :: k -> *)) :: k -> * where
   (:&:) :: !(f a) -> !(g a) -> (f :&: g) a
-infixr 5 :&:
+infixr 6 :&:
 
 deriving instance (Eq   (f a), Eq   (g a)) => Eq   ((f :&: g) a)
 deriving instance (Ord  (f a), Ord  (g a)) => Ord  ((f :&: g) a)
@@ -105,7 +105,7 @@ instance (Witness p q (f a), Witness s t (g a)) => Witness (p,s) (q,t) ((f :&: g
 
 data ((f :: k -> *) :*: (g :: l -> *)) :: (k,l) -> * where
   (:*:) :: !(f a) -> !(g b) -> (f :*: g) (a#b)
-infixr 5 :*:
+infixr 6 :*:
 
 deriving instance (Eq   (f (Fst p)), Eq   (g (Snd p))) => Eq   ((f :*: g) p)
 deriving instance (Ord  (f (Fst p)), Ord  (g (Snd p))) => Ord  ((f :*: g) p)
@@ -150,6 +150,11 @@ instance Traversable1 ((:*:) f) where
 
 instance Bifunctor1 (:*:) where
   bimap1 f g (a :*: b) = f a :*: g b
+
+instance IxFunctor1 (IxSecond (:~:)) ((:*:) f) where
+  imap1 f (a :*: b) = a :*: f (IxSecond Refl) b
+
+-- f :: (k -> *) ==> ((:*:) f) :: (l -> *) -> (k,l) -> *
 
 _fst :: (a#b) :~: (c#d) -> a :~: c
 _fst Refl = Refl
