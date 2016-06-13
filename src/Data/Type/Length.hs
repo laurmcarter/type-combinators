@@ -29,9 +29,11 @@
 
 module Data.Type.Length where
 
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
+import Type.Class.Witness
 import Type.Class.Higher
 import Type.Class.Known
+import Type.Family.Constraint
 import Type.Family.List
 
 data Length :: [k] -> * where
@@ -62,6 +64,11 @@ instance Known Length Ø where
 instance Known Length as => Known Length (a :< as) where
   type KnownC Length (a :< as) = Known Length as
   known = LS known
+
+instance Witness ØC (Known Length as) (Length as) where
+  (\\) r = \case
+    LZ -> r
+    LS l -> r \\ l
 
 elimLength :: p Ø
            -> (forall x xs. Length xs -> p xs -> p (x :< xs))

@@ -37,7 +37,7 @@ import Type.Class.Higher
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 
 data IFin :: N -> N -> * where
   IFZ :: IFin (S x) Z

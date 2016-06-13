@@ -92,11 +92,23 @@ reverseCong = Sub Wit
 
 -- Head,Tail,Init,Last {{{
 
+type family HeadM (as :: [k]) :: Maybe k where
+  HeadM Ø         = Nothing
+  HeadM (a :< as) = Just a
+
 type family Head (as :: [k]) :: k where
   Head (a :< as) = a
 
+type family TailM (as :: [k]) :: Maybe [k] where
+  TailM Ø         = Nothing
+  TailM (a :< as) = Just as
+
 type family Tail (as :: [k]) :: [k] where
   Tail (a :< as) = as
+
+type family InitM (as :: [k]) :: Maybe [k] where
+  InitM Ø         = Nothing
+  InitM (a :< as) = Just (Init' a as)
 
 type family Init (as :: [k]) :: [k] where
   Init (a :< as) = Init' a as
@@ -107,6 +119,10 @@ type family Init' (a :: k) (as :: [k]) :: [k] where
 
 initCong :: (a ~ b,as ~ bs) :- (Init' a as ~ Init' b bs)
 initCong = Sub Wit
+
+type family LastM (as :: [k]) :: Maybe k where
+  LastM Ø         = Nothing
+  LastM (a :< as) = Just (Last' a as)
 
 type family Last (as :: [k]) :: k where
   Last (a :< as) = Last' a as

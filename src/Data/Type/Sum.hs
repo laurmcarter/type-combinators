@@ -32,7 +32,7 @@
 module Data.Type.Sum where
 
 import Data.Type.Index
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 
 import Type.Class.Higher
 import Type.Class.Witness

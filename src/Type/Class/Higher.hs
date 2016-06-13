@@ -22,12 +22,15 @@
 -- Stability   :  experimental
 -- Portability :  RankNTypes
 --
--- Higher order analogs of type classes from the Prelude.
+-- Higher order analogs of type classes from the Prelude,
+-- and quantifier data types.
 ----------------------------------------------------------------------------
 
 module Type.Class.Higher where
 
-import Data.Type.Quantifier
+import Type.Class.Witness
+import Type.Family.Constraint
+import Data.Maybe (fromMaybe)
 
 -- EqN {{{
 
@@ -124,7 +127,6 @@ class Show1 (f :: k -> *) where
 shows1 :: Show1 f => f a -> ShowS
 shows1 = showsPrec1 0
 
-
 class Show2 (f :: k -> l -> *) where
   showsPrec2 :: Int -> f a b -> ShowS
   default showsPrec2 :: Show (f a b) => Int -> f a b -> ShowS
@@ -134,7 +136,6 @@ class Show2 (f :: k -> l -> *) where
 
 shows2 :: Show2 f => f a b -> ShowS
 shows2 = showsPrec2 0
-
 
 class Show3 (f :: k -> l -> m -> *) where
   showsPrec3 :: Int -> f a b c -> ShowS
@@ -233,4 +234,164 @@ class IxBifunctor1 (i :: m -> k -> *) (j :: m -> l -> *) (t :: (k -> *) -> (l ->
           -> t f' g' b
 
 -- }}}
+
+
+
+-- Some {{{
+
+data Some (f :: k -> *) :: * where
+  Some :: f a -> Some f
+
+instance (TestEquality f, Eq1 f) => Eq (Some f) where
+  Some a == Some b = fromMaybe False $ testEquality a b //? return (eq1 a b)
+
+-- | An eliminator for a 'Some' type.
+--
+-- Consider this function akin to a Monadic bind, except
+-- instead of binding into a Monad with a sequent function,
+-- we're binding into the existential quantification with
+-- a universal eliminator function.
+--
+-- It serves as an explicit delimiter in a program of where
+-- the type index may be used and depended on, and where it may
+-- not.
+--
+-- NB: the result type of the eliminating function may
+-- not refer to the universally quantified type index @a@.
+--
+some :: Some f -> (forall a. f a -> r) -> r
+some (Some a) f = f a
+
+(>>-) :: Some f -> (forall a. f a -> r) -> r
+(>>-) = some
+infixl 1 >>-
+
+(>->) :: (forall x. f x -> Some g) -> (forall x. g x -> Some h) -> f a -> Some h
+(f >-> g) a = f a >>- g
+infixr 1 >->
+
+withSome :: (forall a. f a -> r) -> Some f -> r
+withSome f (Some a) = f a
+
+onSome :: (forall a. f a -> g x) -> Some f -> Some g
+onSome f (Some a) = Some (f a)
+
+msome :: Monad m => f a -> m (Some f)
+msome = return . Some
+
+(>>=-) :: Monad m => m (Some f) -> (forall a. f a -> m r) -> m r
+m >>=- f = do
+  s <- m
+  s >>- f
+infixl 1 >>=-
+
+-- }}}
+
+-- Some2 {{{
+
+data Some2 (f :: k -> l -> *) :: * where
+  Some2 :: f a b -> Some2 f
+
+some2 :: Some2 f -> (forall a b. f a b -> r) -> r
+some2 (Some2 a) f = f a
+
+(>>--) :: Some2 f -> (forall a b. f a b -> r) -> r
+(>>--) = some2
+infixl 1 >>--
+
+(>-->) :: (forall x y. f x y -> Some2 g) -> (forall x y. g x y -> Some2 h) -> f a b -> Some2 h
+(f >--> g) a = f a >>-- g
+infixr 1 >-->
+
+withSome2 :: (forall a b. f a b -> r) -> Some2 f -> r
+withSome2 f (Some2 a) = f a
+
+onSome2 :: (forall a b. f a b -> g x y) -> Some2 f -> Some2 g
+onSome2 f (Some2 a) = Some2 (f a)
+
+msome2 :: Monad m => f a b -> m (Some2 f)
+msome2 = return . Some2
+
+(>>=--) :: Monad m => m (Some2 f) -> (forall a b. f a b -> m r) -> m r
+m >>=-- f = do
+  s <- m
+  s >>-- f
+infixl 1 >>=--
+
+-- }}}
+
+-- Some3 {{{
+
+data Some3 (f :: k -> l -> m -> *) :: * where
+  Some3 :: f a b c -> Some3 f
+
+some3 :: Some3 f -> (forall a b c. f a b c -> r) -> r
+some3 (Some3 a) f = f a
+
+(>>---) :: Some3 f -> (forall a b c. f a b c -> r) -> r
+(>>---) = some3
+infixl 1 >>---
+
+(>--->) :: (forall x y z. f x y z -> Some3 g) -> (forall x y z. g x y z -> Some3 h) -> f a b c -> Some3 h
+(f >---> g) a = f a >>--- g
+infixr 1 >--->
+
+withSome3 :: (forall a b c. f a b c -> r) -> Some3 f -> r
+withSome3 f (Some3 a) = f a
+
+onSome3 :: (forall a b c. f a b c -> g x y z) -> Some3 f -> Some3 g
+onSome3 f (Some3 a) = Some3 (f a)
+
+msome3 :: Monad m => f a b c -> m (Some3 f)
+msome3 = return . Some3
+
+(>>=---) :: Monad m => m (Some3 f) -> (forall a b c. f a b c -> m r) -> m r
+m >>=--- f = do
+  s <- m
+  s >>--- f
+infixl 1 >>=---
+
+-- }}}
+
+-- SomeC {{{
+
+data SomeC (c :: k -> Constraint) (f :: k -> *) where
+  SomeC :: c a => f a -> SomeC c f
+
+someC :: SomeC c f -> (forall a. c a => f a -> r) -> r
+someC (SomeC a) f = f a
+
+(>>~) :: SomeC c f -> (forall a. c a => f a -> r) -> r
+(>>~) = someC
+infixl 1 >>~
+
+msomeC :: (Monad m, c a) => f a -> m (SomeC c f)
+msomeC = return . SomeC
+
+(>>=~) :: Monad m => m (SomeC c f) -> (forall a. c a => f a -> m r) -> m r
+m >>=~ f = do
+  s <- m
+  s >>~ f
+infixl 1 >>=~
+
+-- }}}
+
+{-
+-- EveryN {{{
+
+data Every (f :: k -> *) :: * where
+  Every :: { instEvery :: forall a. f a } -> Every f
+
+data Every2 (f :: k -> l -> *) :: * where
+  Every2 :: { instEvery2 :: forall a b. f a b } -> Every2 f
+
+data Every3 (f :: k -> l -> m -> *) :: * where
+  Every3 :: { instEvery3 :: forall a b c. f a b c } -> Every3 f
+
+data EveryC (c :: k -> Constraint) (f :: k -> *) :: * where
+  EveryC :: { instEveryC :: forall a. c a => f a }
+         -> EveryC c f
+
+-- }}}
+-}
 

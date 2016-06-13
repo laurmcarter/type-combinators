@@ -1,5 +1,5 @@
 name: type-combinators
-version: 0.2.2.0
+version: 0.2.3.1
 category: Data
 synopsis: A collection of data types for type-level programming
 cabal-version: >=1.10
@@ -17,23 +17,29 @@ Source-Repository head
 
 library
     exposed-modules:
+        -- Data.Type.Polynomial
         Data.Type.Boolean
         Data.Type.Combinator
         Data.Type.Conjunction
+        Data.Type.Difference
         Data.Type.Disjunction
         Data.Type.Fin
         Data.Type.Fin.Indexed
         Data.Type.Index
+        Data.Type.Index.Trans
         Data.Type.Length
         Data.Type.Nat
         Data.Type.Nat.Inequality
         Data.Type.Option
         Data.Type.Product
+        Data.Type.Product.Env
         Data.Type.Product.Lifted
+        Data.Type.Remove
+        Data.Type.Subset
         Data.Type.Sum
         Data.Type.Sum.Lifted
-        Data.Type.Sym
-        Data.Type.Quantifier
+        -- Data.Type.Sym
+        -- Data.Type.Quantifier
         Data.Type.Vector
         Type.Class.Higher
         Type.Class.Known
@@ -45,7 +51,7 @@ library
         Type.Family.Maybe
         Type.Family.Monoid
         Type.Family.Nat
-        Type.Family.Symbol
+        -- Type.Family.Symbol
         Type.Family.Tuple
     build-depends:
         base >=4.8 && <4.9

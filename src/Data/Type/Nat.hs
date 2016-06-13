@@ -30,7 +30,7 @@ module Data.Type.Nat where
 
 import Data.Type.Boolean
 import Data.Type.Equality
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
@@ -87,7 +87,7 @@ instance TestEquality Nat where
       S_ y -> testEquality x y //? qed
 
 instance BoolEquality Nat where
-  (.==) = \case
+  boolEquality = \case
     Z_ -> \case
       Z_   -> True_
       S_ _ -> False_
@@ -154,4 +154,44 @@ natVal :: Nat n -> Int
 natVal = \case
   Z_   -> 0
   S_ x -> succ $ natVal x
+
+data Le :: N -> N -> * where
+  LeZ :: Le Z y
+  LeS :: !(Le x y)
+      -> Le (S x) (S y)
+
+data Le' :: N -> N -> * where
+  LeRefl :: Le' x x
+  LeIncr :: !(Le' x y)
+         -> Le' x (S y)
+
+leZ' :: Nat x -> Le' Z x
+leZ' = \case
+  Z_   -> LeRefl
+  S_ x -> LeIncr $ leZ' x
+
+leS' :: Le' x y -> Le' (S x) (S y)
+leS' = \case
+  LeRefl   -> LeRefl
+  LeIncr l -> LeIncr $ leS' l
+
+leRefl :: Nat x -> Le x x
+leRefl = \case
+  Z_   -> LeZ
+  S_ x -> LeS $ leRefl x
+
+leIncr :: Le x y -> Le x (S y)
+leIncr = \case
+  LeZ   -> LeZ
+  LeS l -> LeS $ leIncr l
+
+le2le' :: Nat y -> Le x y -> Le' x y
+le2le' y = \case
+  LeZ   -> leZ' y
+  LeS l -> leS' $ le2le' (pred' y) l
+
+le'2le :: Nat y -> Le' x y -> Le x y
+le'2le y = \case
+  LeRefl   -> leRefl y
+  LeIncr l -> leIncr $ le'2le (pred' y) l
 

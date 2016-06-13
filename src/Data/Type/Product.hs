@@ -31,7 +31,7 @@
 --
 -- 'Prod' is similar in nature to a few others in the Haskell ecosystem, such as:
 --
--- Oleg's 'HList', from <http://hackage.haskell.org/package/HList>, and
+-- Oleg Kiselyov's 'HList', from <http://hackage.haskell.org/package/HList>, and
 -- 
 -- Kenneth Foner's 'ConicList', from <http://hackage.haskell.org/package/IndexedList-0.1.0.1/docs/Data-List-Indexed-Conic.html>.
 --
@@ -39,11 +39,12 @@
 
 module Data.Type.Product where
 
+import Data.Type.Boolean
 import Data.Type.Combinator
 import Data.Type.Conjunction
 import Data.Type.Index
 import Data.Type.Length
-import Data.Type.Quantifier
+-- import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
@@ -99,6 +100,19 @@ instance Read1 f => Read1 (Prod f) where
       , (xs,s4) <- readsPrec1 5 s3
       ]
     ) s0
+
+instance BoolEquality f => BoolEquality (Prod f) where
+  boolEquality = \case
+    Ø -> \case
+      Ø      -> True_
+      (:<){} -> False_
+    a :< as -> \case
+      b :< bs -> case a .== b of
+        True_  -> case as .== bs of
+          True_  -> True_
+          False_ -> False_
+        False_ -> False_
+      Ø -> False_
 
 instance TestEquality f => TestEquality (Prod f) where
   testEquality = \case
@@ -162,10 +176,12 @@ append' = \case
   Ø       -> id
   a :< as -> (a :<) . append' as
 
+{-
 lookup' :: TestEquality f => f a -> Prod (f :&: g) as -> Maybe (g a)
 lookup' a = \case
   Ø               -> Nothing
   (b :&: v) :< bs -> witMaybe (a =?= b) (Just v) $ lookup' a bs
+-}
 
 lookupPar :: TestEquality f => f a -> Prod (f :*: g) as -> Maybe (Some g)
 lookupPar a = \case
@@ -269,12 +285,27 @@ instance IxTraversable1 Index Prod where
     Ø       -> pure Ø
     a :< as -> (:<) <$> f IZ a <*> itraverse1 (f . IS) as
 
+instance (Known Length as, Every (Known f) as) => Known (Prod f) as where
+  type KnownC (Prod f) as = (Known Length as, Every (Known f) as)
+  known = go known
+    where
+    go :: Every (Known f) xs => Length xs -> Prod f xs
+    go = \case
+      LZ   -> Ø
+      LS l -> known :< go l
+
+{-
 instance Known (Prod f) Ø where
   known = Ø
 
 instance (Known f a, Known (Prod f) as) => Known (Prod f) (a :< as) where
   type KnownC (Prod f) (a :< as) = (Known f a, Known (Prod f) as)
   known = known :< known
+-}
+
+type family Witnesses (ps :: [Constraint]) (qs :: [Constraint]) (f :: k -> *) (as :: [k]) :: Constraint where
+  Witnesses Ø Ø f Ø = ØC
+  Witnesses (p :< ps) (q :< qs) f (a :< as) = (Witness p q (f a), Witnesses ps qs f as)
 
 instance Witness ØC ØC (Prod f Ø) where
   r \\ _ = r
@@ -282,4 +313,9 @@ instance Witness ØC ØC (Prod f Ø) where
 instance (Witness p q (f a), Witness s t (Prod f as)) => Witness (p,s) (q,t) (Prod f (a :< as)) where
   type WitnessC (p,s) (q,t) (Prod f (a :< as)) = (Witness p q (f a), Witness s t (Prod f as))
   r \\ (a :< as) = r \\ a \\ as
+
+toList :: (forall a. f a -> r) -> Prod f as -> [r]
+toList f = \case
+  Ø       -> []
+  a :< as -> f a : toList f as
 

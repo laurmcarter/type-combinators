@@ -32,7 +32,7 @@ module Type.Family.Bool
 
 import Type.Family.Constraint
 import Type.Class.Witness as Exports (type (==))
-import Data.Type.Bool as Exports (type Not, type (||), type (&&))
+import Data.Type.Bool as Exports (type If, type Not, type (||), type (&&))
 
 type family BoolC (b :: Bool) :: Constraint where
   BoolC True  = ØC

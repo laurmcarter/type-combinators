@@ -28,11 +28,11 @@
 
 module Data.Type.Boolean where
 
-import Data.Type.Quantifier (Some(..))
+-- import Data.Type.Quantifier (Some(..))
 import Type.Family.Bool
-import Type.Family.Constraint
 import Type.Class.Known
 import Type.Class.Higher
+import Type.Class.Witness
 
 data Boolean :: Bool -> * where
   False_ :: Boolean False
@@ -55,53 +55,62 @@ instance Read1 Boolean where
     | ("False_",s1) <- lex s0
     ]
 
+if' :: Boolean b -> ((b ~ True) => a) -> ((b ~ False) => a) -> a
+if' t c a = case t of
+  True_  -> c
+  False_ -> a
+
+(.?) :: ((b ~ True) => a) -> ((b ~ False) => a) -> Boolean b -> a
+(c .? a) t = if' t c a
+infix 4 .?
+
 not' :: Boolean a -> Boolean (Not a)
-not' = \case
-  False_ -> True_
-  True_  -> False_
+not' = False_ .? True_
 
 (.||) :: Boolean a -> Boolean b -> Boolean (a || b)
-(.||) = \case
-  False_ -> id
-  True_  -> const True_
+(.||) = (True_ .? True_ )
+     .? (True_ .? False_)
 infixr 2 .||
 
 (.&&) :: Boolean a -> Boolean b -> Boolean (a && b)
-(.&&) = \case
-  False_ -> const False_
-  True_  -> id
+(.&&) = (True_  .? False_)
+     .? (False_ .? False_)
 infixr 3 .&&
 
 (.^^) :: Boolean a -> Boolean b -> Boolean (a ^^ b)
-a .^^ b = (a .|| b) .&& not' (a .&& b)
+(.^^) = (False_ .? True_ )
+     .? (True_  .? False_)
 infixr 4 .^^
 
 (==>) :: Boolean a -> Boolean b -> Boolean (a ==> b)
-a ==> b = not' a .|| b
+(==>) = (True_ .? False_)
+     .? (True_ .? True_ )
 infixr 1 ==>
 
 (<==>) :: Boolean a -> Boolean b -> Boolean (a <==> b)
-(<==>) = (.==)
+(<==>) = (True_  .? False_)
+      .? (False_ .? True_ )
 infixr 1 <==>
 
 class BoolEquality (f :: k -> *) where
-  type BoolEqC f (a :: k) (b :: k) :: Constraint
-  type BoolEqC f a b = ØC
-  (.==) :: BoolEqC f a b => f a -> f b -> Boolean (a == b)
+  boolEquality :: f a -> f b -> Boolean (a == b)
+
+(.==) :: BoolEquality f => f a -> f b -> Boolean (a == b)
+(.==) = boolEquality
 infix 4 .==
 
 instance BoolEquality Boolean where
-  (.==) = \case
-    False_ -> \case
-      False_ -> True_
-      True_  -> False_
-    True_  -> \case
-      False_ -> False_
-      True_  -> True_
+  boolEquality = (<==>)
+
+instance TestEquality Boolean where
+  testEquality = (qed .? Nothing) .? (Nothing .? qed)
 
 instance Known Boolean True where
   known = True_
 
 instance Known Boolean False where
   known = False_
+
+toBool :: Boolean b -> Bool
+toBool = True .? False
 

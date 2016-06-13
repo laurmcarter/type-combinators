@@ -73,6 +73,8 @@ iotaCong = Sub Wit
 type family Pred (x :: N) :: N where
   Pred (S n) = n
 
+type Pos n = (n ~ S (Pred n))
+
 predCong :: (x ~ y) :- (Pred x ~ Pred y)
 predCong = Sub Wit
 
@@ -81,6 +83,11 @@ type family (x :: N) + (y :: N) :: N where
   S x + y = S (x + y)
 infixr 6 +
 
+data AddW (f :: N -> *) :: N -> * where
+  AddW :: !(f x)
+       -> !(f y)
+       -> AddW f (x + y)
+
 addCong :: (w ~ y,x ~ z) :- ((w + x) ~ (y + z))
 addCong = Sub Wit
 
@@ -88,6 +95,11 @@ type family (x :: N) * (y :: N) :: N where
   Z   * y = Z
   S x * y = (x * y) + y
 infixr 7 *
+
+data MulW (f :: N -> *) :: N -> * where
+  MulW :: !(f x)
+       -> !(f y)
+       -> MulW f (x * y)
 
 mulCong :: (w ~ y,x ~ z) :- ((w * x) ~ (y * z))
 mulCong = Sub Wit

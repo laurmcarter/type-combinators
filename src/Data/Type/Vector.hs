@@ -25,13 +25,13 @@
 -- Stability   :  experimental
 -- Portability :  RankNTypes
 --
--- 'V' and its combinator analog 'VT' represent lists
+-- 'Vec' and its combinator analog 'VecT' represent lists
 -- of known length, characterized by the index @(n :: N)@ in
--- @'V' n a@ or @'VT' n f a@.
+-- @'Vec' n a@ or @'VecT' n f a@.
 --
 -- The classic example used ad nauseum for type-level programming.
 --
--- The operations on 'V' and 'VT' correspond to the type level arithmetic
+-- The operations on 'Vec' and 'VecT' correspond to the type level arithmetic
 -- operations on the kind 'N'.
 --
 -----------------------------------------------------------------------------
@@ -44,6 +44,7 @@ import Data.Type.Length
 import Data.Type.Nat
 import Data.Type.Product (Prod(..),curry',pattern (:>))
 
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 
@@ -54,162 +55,180 @@ import Type.Family.Nat
 import qualified Data.List as L
 import Data.Monoid
 
-data VT (n :: N) (f :: k -> *) :: k -> * where
-  ØV   :: VT Z f a
-  (:*) :: !(f a) -> !(VT n f a) -> VT (S n) f a
+data VecT (n :: N) (f :: k -> *) :: k -> * where
+  ØV   :: VecT Z f a
+  (:*) :: !(f a) -> !(VecT n f a) -> VecT (S n) f a
 infixr 4 :*
 
-elimVT :: p Z
+elimVecT :: p Z
        -> (forall x. f a -> p x -> p (S x))
-       -> VT n f a
+       -> VecT n f a
        -> p n
-elimVT z s = \case
+elimVecT z s = \case
   ØV      -> z
-  a :* as -> s a $ elimVT z s as
+  a :* as -> s a $ elimVecT z s as
 
 elimV :: p Z
       -> (forall x. a -> p x -> p (S x))
-      -> V n a
+      -> Vec n a
       -> p n
-elimV z s = elimVT z $ s . getI
+elimV z s = elimVecT z $ s . getI
 
-type V n = VT n I
-pattern (:+) :: a -> V n a -> V (S n) a
+type Vec n = VecT n I
+pattern (:+) :: a -> Vec n a -> Vec (S n) a
 pattern a :+ as = I a :* as
 infixr 4 :+
 
-deriving instance Eq   (f a) => Eq   (VT n f a)
-deriving instance Ord  (f a) => Ord  (VT n f a)
-deriving instance Show (f a) => Show (VT n f a)
+deriving instance Eq   (f a) => Eq   (VecT n f a)
+deriving instance Ord  (f a) => Ord  (VecT n f a)
+deriving instance Show (f a) => Show (VecT n f a)
 
-(.++) :: VT x f a -> VT y f a -> VT (x + y) f a
+(.++) :: VecT x f a -> VecT y f a -> VecT (x + y) f a
 (.++) = \case
   ØV      -> id
   a :* as -> (a :*) . (as .++)
 infixr 5 .++
 
-vrep :: forall n f a. Known Nat n => f a -> VT n f a
+vrep :: forall n f a. Known Nat n => f a -> VecT n f a
 vrep a = go (known :: Nat n)
   where
-  go :: Nat x -> VT x f a
+  go :: Nat x -> VecT x f a
   go = \case
     Z_   -> ØV
     S_ x -> a :* go x
 
-head' :: VT (S n) f a -> f a
+head' :: VecT (S n) f a -> f a
 head' (a :* _) = a
 
-tail' :: VT (S n) f a -> VT n f a
+tail' :: VecT (S n) f a -> VecT n f a
 tail' (_ :* as) = as
 
-onTail :: (VT m f a -> VT n f a) -> VT (S m) f a -> VT (S n) f a
+onTail :: (VecT m f a -> VecT n f a) -> VecT (S m) f a -> VecT (S n) f a
 onTail f (a :* as) = a :* f as
 
-vDel :: Fin n -> VT n f a -> VT (Pred n) f a
+vDel :: Fin n -> VecT n f a -> VecT (Pred n) f a
 vDel = \case
   FZ   -> tail'
   FS x -> onTail (vDel x) \\ x
 
-imap :: (Fin n -> f a -> g b) -> VT n f a -> VT n g b
+imap :: (Fin n -> f a -> g b) -> VecT n f a -> VecT n g b
 imap f = \case
   ØV      -> ØV
   a :* as -> f FZ a :* imap (f . FS) as
 
-ifoldMap :: Monoid m => (Fin n -> f a -> m) -> VT n f a -> m
+ifoldMap :: Monoid m => (Fin n -> f a -> m) -> VecT n f a -> m
 ifoldMap f = \case
   ØV      -> mempty
   a :* as -> f FZ a <> ifoldMap (f . FS) as
 
-itraverse :: Applicative h => (Fin n -> f a -> h (g b)) -> VT n f a -> h (VT n g b)
+itraverse :: Applicative h => (Fin n -> f a -> h (g b)) -> VecT n f a -> h (VecT n g b)
 itraverse f = \case
   ØV      -> pure ØV
   a :* as -> (:*) <$> f FZ a <*> itraverse (f . FS) as
 
-index :: Fin n -> VT n f a -> f a
+index :: Fin n -> VecT n f a -> f a
 index = \case
   FZ   -> head'
   FS x -> index x . tail'
 
-vmap :: (f a -> g b) -> VT n f a -> VT n g b
+index' :: Fin n -> Vec n a -> a
+index' i = getI . index i
+
+vmap :: (f a -> g b) -> VecT n f a -> VecT n g b
 vmap f = \case
   ØV      -> ØV
   a :* as -> f a :* vmap f as
 
-vap :: (f a -> g b -> h c) -> VT n f a -> VT n g b -> VT n h c
+vap :: (f a -> g b -> h c) -> VecT n f a -> VecT n g b -> VecT n h c
 vap f = \case
   ØV  -> \_ -> ØV
   a :* as -> \case
     b :* bs -> f a b :* vap f as bs
     _       -> error "impossible type"
 
-vfoldr :: (f a -> b -> b) -> b -> VT n f a -> b
+vfoldr :: (f a -> b -> b) -> b -> VecT n f a -> b
 vfoldr s z = \case
   ØV      -> z
   a :* as -> s a $ vfoldr s z as
 
-vfoldMap' :: (b -> b -> b) -> b -> (f a -> b) -> VT n f a -> b
+vfoldMap' :: (b -> b -> b) -> b -> (f a -> b) -> VecT n f a -> b
 vfoldMap' j z f = \case
   ØV       -> z
   a :* ØV  -> f a
   a :* as  -> j (f a) $ vfoldMap' j z f as
 
-vfoldMap :: Monoid m => (f a -> m) -> VT n f a -> m
+vfoldMap :: Monoid m => (f a -> m) -> VecT n f a -> m
 vfoldMap f = \case
   ØV      -> mempty
   a :* as -> f a <> vfoldMap f as
 
-withVT :: [f a] -> (forall n. VT n f a -> r) -> r
-withVT as k = case as of
+withVecT :: [f a] -> (forall n. VecT n f a -> r) -> r
+withVecT as k = case as of
   []      -> k ØV
-  a : as' -> withVT as' $ \v -> k $ a :* v
+  a : as' -> withVecT as' $ \v -> k $ a :* v
 
-withV :: [a] -> (forall n. V n a -> r) -> r
-withV as k = withVT (I <$> as) k
+withV :: [a] -> (forall n. Vec n a -> r) -> r
+withV as k = withVecT (I <$> as) k
 
-findV :: Eq a => a -> V n a -> Maybe (Fin n)
-findV = findVT . I
+findV :: Eq a => a -> Vec n a -> Maybe (Fin n)
+findV = findVecT . I
 
-findVT :: Eq (f a) => f a -> VT n f a -> Maybe (Fin n)
-findVT a = \case
+findVecT :: Eq (f a) => f a -> VecT n f a -> Maybe (Fin n)
+findVecT a = \case
   ØV      -> Nothing
   b :* as -> if a == b
     then Just FZ
-    else FS <$> findVT a as
+    else FS <$> findVecT a as
 
-instance Functor f => Functor (VT n f) where
+instance Functor1 (VecT n) where
+  map1 f = \case
+    ØV      -> ØV
+    a :* as -> f a :* map1 f as
+
+instance Foldable1 (VecT n) where
+  foldMap1 f = \case
+    ØV -> mempty
+    a :* as -> f a <> foldMap1 f as
+
+instance Traversable1 (VecT n) where
+  traverse1 f = \case
+    ØV      -> pure ØV
+    a :* as -> (:*) <$> f a <*> traverse1 f as
+
+instance Functor f => Functor (VecT n f) where
   fmap = vmap . fmap
 
-instance (Applicative f, Known Nat n) => Applicative (VT n f) where
+instance (Applicative f, Known Nat n) => Applicative (VecT n f) where
   pure  = vrep . pure
   (<*>) = vap (<*>)
 
-instance (Monad f, Known Nat n) => Monad (VT n f) where
+instance (Monad f, Known Nat n) => Monad (VecT n f) where
   v >>= f = imap (\x -> (>>= index x . f)) v
 
-instance Foldable f => Foldable (VT n f) where
+instance Foldable f => Foldable (VecT n f) where
   foldMap f = \case
     ØV      -> mempty
     a :* as -> foldMap f a <> foldMap f as
 
-instance Traversable f => Traversable (VT n f) where
+instance Traversable f => Traversable (VecT n f) where
   traverse f = \case
     ØV      -> pure ØV
     a :* as -> (:*) <$> traverse f a <*> traverse f as
 
 {-
-instance (Witness p q (f a), n ~ S x) => Witness p q (VT n f a) where
-  type WitnessC p q (VT n f a) = Witness p q (f a)
+instance (Witness p q (f a), n ~ S x) => Witness p q (VecT n f a) where
+  type WitnessC p q (VecT n f a) = Witness p q (f a)
   (\\) r = \case
     a :* _ -> r \\ a
     _      -> error "impossible type"
 -}
 
-instance Witness ØC (Known Nat n) (VT n f a) where
+instance Witness ØC (Known Nat n) (VecT n f a) where
   (\\) r = \case
     ØV      -> r
     _ :* as -> r \\ as
 
-instance (Num (f a), Known Nat n) => Num (VT n f a) where
+instance (Num (f a), Known Nat n) => Num (VecT n f a) where
   (*)         = vap (*)
   (+)         = vap (+)
   (-)         = vap (-)
@@ -234,12 +253,12 @@ instance Num (Matrix ns a) => Num (M ns a) where
 
 type family Matrix (ns :: [N]) :: * -> * where
   Matrix Ø         = I
-  Matrix (n :< ns) = VT n (Matrix ns)
+  Matrix (n :< ns) = VecT n (Matrix ns)
 
-vgen_ :: Known Nat n => (Fin n -> f a) -> VT n f a
+vgen_ :: Known Nat n => (Fin n -> f a) -> VecT n f a
 vgen_ = vgen known
 
-vgen :: Nat n -> (Fin n -> f a) -> VT n f a
+vgen :: Nat n -> (Fin n -> f a) -> VecT n f a
 vgen x f = case x of
   Z_   -> ØV
   S_ y -> f FZ :* vgen y (f . FS)
@@ -255,10 +274,10 @@ mgen ns f = case ns of
 onMatrix :: (Matrix ms a -> Matrix ns b) -> M ms a -> M ns b
 onMatrix f = M . f . getMatrix
 
-diagonal :: VT n (VT n f) a -> VT n f a
+diagonal :: VecT n (VecT n f) a -> VecT n f a
 diagonal = imap index
 
-vtranspose :: Known Nat n => VT m (VT n f) a -> VT n (VT m f) a
+vtranspose :: Known Nat n => VecT m (VecT n f) a -> VecT n (VecT m f) a
 vtranspose v = vgen_ $ \x -> vmap (index x) v
 
 transpose :: Known Nat n => M (m :< n :< ns) a -> M (n :< m :< ns) a
@@ -279,7 +298,7 @@ m3 = mgen_ $ \(x :< y :> z) -> (fin x,fin y,fin z)
 m4 :: M '[N2,N3,N4,N5] (Int,Int,Int,Int)
 m4 = mgen_ $ \(w :< x :< y :> z) -> (fin w,fin x,fin y,fin z)
 
-ppVec :: (VT n ((->) String) String -> ShowS) -> (f a -> ShowS) -> VT n f a -> ShowS
+ppVec :: (VecT n ((->) String) String -> ShowS) -> (f a -> ShowS) -> VecT n f a -> ShowS
 ppVec pV pF = pV . vmap pF
 
 ppMatrix :: forall ns a. (Show a, Known Length ns) => M ns a -> IO ()
@@ -343,7 +362,7 @@ class Functor f => Additive f where
 infixl 6 ^+^, ^-^
 
 instance Additive I
-instance (Additive f, Known Nat n) => Additive (VT n f) where
+instance (Additive f, Known Nat n) => Additive (VecT n f) where
   zero   = vrep zero
   liftU2 = vap . liftU2
   liftI2 = vap . liftI2
@@ -363,8 +382,8 @@ class Additive (Diff f) => Affine f where
 infixl 6 .-., .+^, .-^
 
 instance Affine I
-instance (Affine f, Known Nat n) => Affine (VT n f) where
-  type Diff (VT n f) = VT n (Diff f)
+instance (Affine f, Known Nat n) => Affine (VecT n f) where
+  type Diff (VecT n f) = VecT n (Diff f)
   (.-.) = vap (.-.)
   (.+^) = vap (.+^)
   (.-^) = vap (.-^)
@@ -388,7 +407,7 @@ class Additive f => Metric f where
 instance Metric I where
   dot (I a) (I b) = a * b
 
-instance (Metric f, Known Nat n) => Metric (VT n f) where
+instance (Metric f, Known Nat n) => Metric (VecT n f) where
   dot a b = getSum $ foldMap Sum $ vap ((I .) . dot) a b
 
 (*^) :: (Functor f, Num a) => a -> f a -> f a
