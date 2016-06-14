@@ -105,7 +105,6 @@ remSub :: Length bs -> Remove as a bs -> Subset as bs
 remSub = \case
   LZ   -> \case
     RZ -> Ø
-    _  -> error "impossible"
   LS l -> \case
     RZ   -> IS IZ :< map1 (IS . IS) subRefl \\ l
     RS r -> IZ :< map1 IS (remSub l r)

@@ -79,5 +79,4 @@ instance (Witness p q (f a), x ~ Just a) => Witness p q (Option f x) where
   type WitnessC p q (Option f x) = Witness p q (f (FromJust x))
   (\\) r = \case
     Just_ a -> r \\ a
-    _       -> error "impossible type"
 

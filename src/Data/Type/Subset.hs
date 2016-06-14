@@ -37,12 +37,11 @@ module Data.Type.Subset
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
-import Type.Family.Constraint
 import Type.Family.List
-import Type.Family.Nat
 import Data.Type.Index
 import Data.Type.Length
-import Data.Type.Product as Exports
+import Data.Type.Product as Exports (Prod(..))
+import Data.Type.Product (index)
 import Data.Type.Sum (Sum(..),prj)
 import Control.Applicative ((<|>))
 

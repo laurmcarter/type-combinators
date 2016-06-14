@@ -31,16 +31,13 @@
 module Data.Type.Difference where
 
 -- import Data.Type.Quantifier
-import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.List
-import Data.Type.Index
 import Data.Type.Length
 import Data.Type.Subset
 import Data.Type.Remove
-import Data.Type.Product
 import Data.Type.Sum
 import Control.Arrow (first,left)
 
@@ -90,10 +87,8 @@ instance TestEquality (Difference as bs) where
   testEquality = \case
     ØD -> \case
       ØD -> qed
-      _  -> Nothing
     r1 :- d1 -> \case
       r2 :- d2 -> r1 =?= r2 //? d1 =?= d2 //? qed
-      _    -> Nothing
 
 elimDifference :: (forall xs. p xs Ø xs)
                -> (forall x ws xs ys zs. Remove xs x ys -> Difference ys ws zs -> p ys ws zs -> p xs (x :< ws) zs)
@@ -104,19 +99,21 @@ elimDifference n c = \case
   r :- d -> c r d $ elimDifference n c d
 
 {-
-diffSub :: Difference as bs cs -> Subset as bs
+diffSub :: Known Length as => Difference as bs cs -> Subset as bs
 diffSub = \case
   ØD     -> Ø
-  (r :: Remove as a ds) :- (d :: Difference ds es cs) -> x :< res
+  (r :: Remove as a ds) :- (d :: Difference ds es cs) -> x :< s
     where
-    res :: Subset as es
-    res = map1 f xs
-    f :: Index ds x -> Index as x
-    f = subIx $ remSub _ r
     x :: Index as a
     x = remIx r
-    xs :: Subset ds es
-    xs = diffSub d
+    s :: Subset as es
+    s = subTrans s2 s1
+    s1 :: Subset ds es
+    s1 = diffSub d
+    s2 :: Subset as ds
+    s2 = remSub l r
+    l :: Length ds
+    l = _
 -}
 
 {-

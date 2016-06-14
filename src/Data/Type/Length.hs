@@ -35,6 +35,8 @@ import Type.Class.Higher
 import Type.Class.Known
 import Type.Family.Constraint
 import Type.Family.List
+import Type.Family.Nat
+import Data.Type.Nat
 
 data Length :: [k] -> * where
   LZ :: Length Ø
@@ -65,10 +67,18 @@ instance Known Length as => Known Length (a :< as) where
   type KnownC Length (a :< as) = Known Length as
   known = LS known
 
-instance Witness ØC (Known Length as) (Length as) where
+instance (n ~ Len as) => Witness ØC (Known Nat n, Known Length as) (Length as) where
+  type WitnessC ØC (Known Nat n, Known Length as) (Length as) = (n ~ Len as)
   (\\) r = \case
     LZ -> r
     LS l -> r \\ l
+
+{-
+natLen :: Nat (Len as) -> Length as
+natLen = \case
+  Z_   -> LZ
+  S_ n -> _
+-}
 
 elimLength :: p Ø
            -> (forall x xs. Length xs -> p xs -> p (x :< xs))

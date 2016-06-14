@@ -67,19 +67,15 @@ instance Eq1 f => Eq1 (Prod f) where
   eq1 = \case
     Ø -> \case
       Ø -> True
-      _ -> False
     a :< as -> \case
       b :< bs -> a =#= b && as =#= bs
-      _       -> False
 
 instance Ord1 f => Ord1 (Prod f) where
   compare1 = \case
     Ø -> \case
       Ø -> EQ
-      _ -> LT
     a :< as -> \case
       b :< bs -> compare1 a b `mappend` compare1 as bs
-      _       -> GT
 
 instance Show1 f => Show1 (Prod f) where
   showsPrec1 d = \case
