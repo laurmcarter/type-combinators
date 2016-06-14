@@ -141,7 +141,7 @@ vmap f = \case
 
 vap :: (f a -> g b -> h c) -> VecT n f a -> VecT n g b -> VecT n h c
 vap f = \case
-  ØV  -> \_ -> ØV
+  ØV      -> const ØV
   a :* as -> \case
     b :* bs -> f a b :* vap f as bs
 
@@ -167,7 +167,7 @@ withVecT as k = case as of
   a : as' -> withVecT as' $ \v -> k $ a :* v
 
 withV :: [a] -> (forall n. Vec n a -> r) -> r
-withV as k = withVecT (I <$> as) k
+withV as = withVecT (I <$> as)
 
 findV :: Eq a => a -> Vec n a -> Maybe (Fin n)
 findV = findVecT . I

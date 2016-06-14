@@ -5,7 +5,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -156,7 +155,7 @@ class (∨) (f :: k -> Constraint) (g :: k -> Constraint) (a :: k) where
 infixr 6 ∨
 
 eitherC :: forall f g a b. f a :- b -> g a :- b -> (f ∨ g) a :- b
-eitherC f g = Sub $ case ((disjC :: Either (Wit (f a)) (Wit (g a))),f,g) of
+eitherC f g = Sub $ case (disjC :: Either (Wit (f a)) (Wit (g a)),f,g) of
   (Left  a,Sub b,_    ) -> b \\ a
   (Right a,_    ,Sub b) -> b \\ a
 
@@ -180,7 +179,7 @@ class Forall (p :: k -> Constraint) (q :: k -> Constraint) where
 -- Initial/Terminal {{{
 
 toEquality :: (a ~ b) :- (c ~ d) -> a :~: b -> c :~: d
-toEquality p = \Refl -> Refl \\ p
+toEquality p Refl = Refl \\ p
 
 commute :: (a ~ b) :- (b ~ a)
 commute = Sub Wit
