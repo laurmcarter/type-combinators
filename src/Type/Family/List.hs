@@ -74,7 +74,7 @@ concatCong = Sub Wit
 
 -- | Type-level list snoc.
 type family (as :: [k]) >: (a :: k) :: [k] where
-  Ø         >: a = Only a
+  Ø         >: a = a :< Ø
   (b :< as) >: a = b :< (as >: a)
 infixl 6 >:
 
@@ -139,7 +139,7 @@ lastCong = Sub Wit
 -- | Takes a type-level list of 'Constraint's to a single
 -- 'Constraint', where @ListC cs@ holds iff all elements
 -- of @cs@ hold.
-type family ListC (cs :: [Constraint]) :: Constraint where
+type family ListC (cs :: [Constraint]) = (c :: Constraint) | c -> cs where
   ListC  Ø        = ØC
   ListC (c :< cs) = (c, ListC cs)
 
@@ -179,7 +179,7 @@ type family Snds (ps :: [(k,l)]) :: [l] where
   Snds  Ø        = Ø
   Snds (p :< ps) = Snd p :< Snds ps
 
-type family Zip (as :: [k]) (bs :: [l]) :: [(k,l)] where
+type family Zip (as :: [k]) (bs :: [l]) = (cs :: [(k,l)]) | cs -> as bs where
   Zip  Ø         Ø        = Ø
   Zip (a :< as) (b :< bs) = a#b :< Zip as bs
 

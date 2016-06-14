@@ -135,19 +135,15 @@ instance (Eq1 f, Eq1 g) => Eq1 (f :+: g) where
   eq1 = \case
     L' a -> \case
       L' b -> a =#= b
-      _    -> False
     R' a -> \case
       R' b -> a =#= b
-      _    -> False
 
 instance (Ord1 f, Ord1 g) => Ord1 (f :+: g) where
   compare1 = \case
     L' a -> \case
       L' b -> compare1 a b
-      _    -> LT
     R' a -> \case
       R' b -> compare1 a b
-      _    -> GT
 
 instance (Show1 f, Show1 g) => Show1 (f :+: g) where
   showsPrec1 d = showParen (d > 10) . \case

@@ -67,7 +67,6 @@ instance (Known Nat n, Pos n) => Enum (Fin n) where
     | otherwise = case (known :: Nat n) of
       S_ Z_     -> FZ
       S_ (S_{}) -> FS $ toEnum (n-1)
-      _         -> error "impossible"
   fromEnum = fin
 
 instance (Known Nat n, Pos n) => Bounded (Fin n) where
@@ -75,7 +74,6 @@ instance (Known Nat n, Pos n) => Bounded (Fin n) where
   maxBound = case (known :: Nat n) of
     S_ Z_     -> FZ
     S_ (S_{}) -> FS $ maxBound
-    _         -> error "impossible"
 
 elimFin :: (forall x. p (S x))
         -> (forall x. Fin x -> p x -> p (S x))

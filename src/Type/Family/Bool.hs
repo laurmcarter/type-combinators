@@ -34,7 +34,7 @@ import Type.Family.Constraint
 import Type.Class.Witness as Exports (type (==))
 import Data.Type.Bool as Exports (type If, type Not, type (||), type (&&))
 
-type family BoolC (b :: Bool) :: Constraint where
+type family BoolC (b :: Bool) = (c :: Constraint) | c -> b where
   BoolC True  = ØC
   BoolC False = Fail
 

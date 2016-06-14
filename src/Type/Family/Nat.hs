@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
@@ -63,7 +64,7 @@ type family NatEq (x :: N) (y :: N) :: Bool where
   NatEq (S x) (S y) = NatEq x y
 type instance x == y = NatEq x y
 
-type family Iota (x :: N) :: [N] where
+type family Iota (x :: N) = (xs :: [N]) | xs -> x where
   Iota Z     = Ø
   Iota (S x) = x :< Iota x
 

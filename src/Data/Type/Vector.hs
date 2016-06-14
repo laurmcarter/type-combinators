@@ -144,7 +144,6 @@ vap f = \case
   ØV  -> \_ -> ØV
   a :* as -> \case
     b :* bs -> f a b :* vap f as bs
-    _       -> error "impossible type"
 
 vfoldr :: (f a -> b -> b) -> b -> VecT n f a -> b
 vfoldr s z = \case
