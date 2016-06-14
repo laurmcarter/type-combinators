@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -65,15 +64,15 @@ instance (Known Nat n, Pos n) => Enum (Fin n) where
   toEnum n
     | n <= 0 = FZ
     | otherwise = case (known :: Nat n) of
-      S_ Z_     -> FZ
-      S_ (S_{}) -> FS $ toEnum (n-1)
+      S_ Z_   -> FZ
+      S_ S_{} -> FS $ toEnum (n-1)
   fromEnum = fin
 
 instance (Known Nat n, Pos n) => Bounded (Fin n) where
   minBound = FZ
   maxBound = case (known :: Nat n) of
-    S_ Z_     -> FZ
-    S_ (S_{}) -> FS $ maxBound
+    S_ Z_   -> FZ
+    S_ S_{} -> FS maxBound
 
 elimFin :: (forall x. p (S x))
         -> (forall x. Fin x -> p x -> p (S x))
