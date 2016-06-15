@@ -242,13 +242,13 @@ select = \case
   Ø     -> pure Ø
   x:<xs -> (:<) <$> index x <*> select xs
 
-indexes :: forall as. Known Length as => Prod (Index as) as
-indexes = indexes' known
+indices :: forall as. Known Length as => Prod (Index as) as
+indices = indices' known
 
-indexes' :: Length as -> Prod (Index as) as
-indexes' = \case
+indices' :: Length as -> Prod (Index as) as
+indices' = \case
   LZ   -> Ø
-  LS l -> IZ :< map1 IS (indexes' l)
+  LS l -> IZ :< map1 IS (indices' l)
 
 
 instance Functor1 Prod where
