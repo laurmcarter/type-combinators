@@ -60,6 +60,10 @@ data VecT (n :: N) (f :: k -> *) :: k -> * where
   (:*) :: !(f a) -> !(VecT n f a) -> VecT (S n) f a
 infixr 4 :*
 
+(*:) :: f a -> f a -> VecT (S (S Z)) f a
+a *: b = a :* b :* ØV
+infix 5 *:
+
 elimVecT :: p Z
        -> (forall x. f a -> p x -> p (S x))
        -> VecT n f a
@@ -75,9 +79,14 @@ elimV :: p Z
 elimV z s = elimVecT z $ s . getI
 
 type Vec n = VecT n I
+
 pattern (:+) :: a -> Vec n a -> Vec (S n) a
 pattern a :+ as = I a :* as
 infixr 4 :+
+
+(+:) :: a -> a -> Vec (S (S Z)) a
+a +: b = a :+ b :+ ØV
+infix 5 +:
 
 deriving instance Eq   (f a) => Eq   (VecT n f a)
 deriving instance Ord  (f a) => Ord  (VecT n f a)
