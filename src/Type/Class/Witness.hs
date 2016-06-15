@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}

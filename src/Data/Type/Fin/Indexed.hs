@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
