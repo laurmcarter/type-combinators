@@ -187,9 +187,15 @@ data (f :: k -> *) :&&: (g :: k -> *) where
 infixr 6 :&&:
 
 instance (TestEquality f, TestEquality g, Eq1 f, Eq1 g) => Eq (f :&&: g) where
-  p == q = case conjEq p q of
+  p == q = case exConjEq p q of
     Just (a :&&: b, c :&&: d) -> eq1 a b && eq1 c d
     _                         -> False
+
+-- Defaulting to LT when terms are incomparable is dubious
+instance (TestEquality f, TestEquality g, Ord1 f, Ord1 g) => Ord (f :&&: g) where
+  compare p q = case exConjEq p q of
+    Just (a :&&: b, c :&&: d) -> compare1 a b `mappend` compare1 c d
+    _                         -> LT
 
 instance (Show1 f, Show1 g) => Show (f :&&: g) where
   showsPrec d (a :&&: b) = showParen (d > 6)
@@ -197,8 +203,8 @@ instance (Show1 f, Show1 g) => Show (f :&&: g) where
     . showString " :&&: "
     . showsPrec1 6 b
 
-conjEq :: (TestEquality f, TestEquality g) => f :&&: g -> f :&&: g -> Maybe (f :&&: f, g :&&: g)
-conjEq (a :&&: c) (b :&&: d) = a =?= b //? c =?= d //? return (a :&&: b,c :&&: d)
+exConjEq :: (TestEquality f, TestEquality g) => f :&&: g -> f :&&: g -> Maybe (f :&&: f, g :&&: g)
+exConjEq (a :&&: c) (b :&&: d) = a =?= b //? c =?= d //? return (a :&&: b,c :&&: d)
 
 -- }}}
 
