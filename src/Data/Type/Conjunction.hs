@@ -180,3 +180,25 @@ instance (Witness p q (f a), Witness s t (g b), x ~ (a#b)) => Witness (p,s) (q,t
 
 -- }}}
 
+-- (:&&:) {{{
+
+data (f :: k -> *) :&&: (g :: k -> *) where
+  (:&&:) :: !(f a) -> !(g a) -> f :&&: g
+infixr 6 :&&:
+
+instance (TestEquality f, TestEquality g, Eq1 f, Eq1 g) => Eq (f :&&: g) where
+  p == q = case conjEq p q of
+    Just (a :&&: b, c :&&: d) -> eq1 a b && eq1 c d
+    _                         -> False
+
+instance (Show1 f, Show1 g) => Show (f :&&: g) where
+  showsPrec d (a :&&: b) = showParen (d > 6)
+    $ showsPrec1 7 a
+    . showString " :&&: "
+    . showsPrec1 6 b
+
+conjEq :: (TestEquality f, TestEquality g) => f :&&: g -> f :&&: g -> Maybe (f :&&: f, g :&&: g)
+conjEq (a :&&: c) (b :&&: d) = a =?= b //? c =?= d //? return (a :&&: b,c :&&: d)
+
+-- }}}
+
