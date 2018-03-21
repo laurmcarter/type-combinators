@@ -57,12 +57,9 @@ zeroCong = Sub Wit
 zNotS :: (Z ~ S x) :- Fail
 zNotS = zeroCong
 
-type family NatEq (x :: N) (y :: N) :: Bool where
-  NatEq  Z     Z    = True
-  NatEq  Z    (S y) = False
-  NatEq (S x)  Z    = False
-  NatEq (S x) (S y) = NatEq x y
-type instance x == y = NatEq x y
+-- | Note: Was previously a type family, but is now just a synonym for '=='
+-- from 'Data.Type.Equality'.
+type NatEq (x :: N) (y :: N) = x == y
 
 type family Iota (x :: N) = (xs :: [N]) | xs -> x where
   Iota Z     = Ø
