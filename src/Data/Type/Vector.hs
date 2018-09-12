@@ -15,6 +15,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Type.Vector
@@ -258,6 +260,16 @@ instance Num (Matrix ns a) => Num (M ns a) where
   M a - M b    = M $ a - b
   abs (M a)    = M $ abs a
   signum (M a) = M $ signum a
+
+deriving instance Functor  (Matrix ns) => Functor  (M ns)
+deriving instance Foldable (Matrix ns) => Foldable (M ns)
+
+instance Applicative (Matrix ns) => Applicative (M ns) where
+  pure = M . pure
+  M f <*> M a = M $ f <*> a
+
+instance Monad (Matrix ns) => Monad (M ns) where
+  M ma >>= f = M (ma >>= getMatrix . f)
 
 type family Matrix (ns :: [N]) :: * -> * where
   Matrix Ø         = I
