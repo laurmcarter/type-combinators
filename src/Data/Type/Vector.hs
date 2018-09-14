@@ -213,6 +213,11 @@ vSetAt n = vUpdateAt n . const
 data Range n l m = Range (IFin ('S n) l) (IFin ('S n) (l + m))
   deriving (Show, Eq)
 
+instance (Known (IFin (S n)) l, Known (IFin (S n)) (l + m))
+  => Known (Range n l) m where
+  type KnownC (Range n l) m = (Known (IFin (S n)) l, Known (IFin (S n)) (l + m))
+  known = Range known known
+
 updateRange :: Range n l m -> (Fin m -> f a -> f a) -> VecT n f a -> VecT n f a
 updateRange = \case
   Range  IFZ     IFZ    -> \_ -> id
