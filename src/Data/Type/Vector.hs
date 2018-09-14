@@ -40,6 +40,7 @@ module Data.Type.Vector where
 
 import Data.Type.Combinator
 import Data.Type.Fin
+import Data.Type.Fin.Indexed
 import Data.Type.Length
 import Data.Type.Nat
 import Data.Type.Product (Prod(..),curry',pattern (:>))
@@ -112,8 +113,21 @@ head' (a :* _) = a
 tail' :: VecT (S n) f a -> VecT n f a
 tail' (_ :* as) = as
 
+onHead :: (f a -> f a) -> VecT ('S n) f a -> VecT ('S n) f a
+onHead f (a :* as) = f a :* as
+
 onTail :: (VecT m f a -> VecT n f a) -> VecT (S m) f a -> VecT (S n) f a
 onTail f (a :* as) = a :* f as
+
+take' :: IFin ('S n) m -> VecT n f a -> VecT m f a
+take' = \case
+  IFS n -> onTail (take' n) \\ n
+  IFZ   -> const ØV
+
+drop' :: Nat m -> VecT (m + n) f a -> VecT n f a
+drop' = \case
+  S_ n -> drop' n . tail'
+  Z_   -> id
 
 vDel :: Fin n -> VecT n f a -> VecT (Pred n) f a
 vDel = \case
@@ -187,6 +201,27 @@ findVecT a = \case
   b :* as -> if a == b
     then Just FZ
     else FS <$> findVecT a as
+
+vUpdateAt :: Fin n -> (f a -> f a) -> VecT n f a -> VecT n f a
+vUpdateAt = \case
+  FS m -> onTail . vUpdateAt m
+  FZ   -> onHead
+
+vSetAt :: Fin n -> f a -> VecT n f a -> VecT n f a
+vSetAt n = vUpdateAt n . const
+
+data Range n l m = Range (IFin ('S n) l) (IFin ('S n) (l + m))
+  deriving (Show, Eq)
+
+updateRange :: Range n l m -> (Fin m -> f a -> f a) -> VecT n f a -> VecT n f a
+updateRange = \case
+  Range  IFZ     IFZ    -> \_ -> id
+  Range (IFS l) (IFS m) -> \f -> onTail (updateRange (Range l m) f) \\ m
+  Range  IFZ    (IFS m) -> \f -> onTail (updateRange (Range IFZ m) $ f . FS)
+                               . onHead (f FZ) \\ m
+
+setRange :: Range n l m -> VecT m f a -> VecT n f a -> VecT n f a
+setRange r nv = updateRange r (\i _ -> index i nv)
 
 instance Functor1 (VecT n) where
   map1 f = \case
@@ -282,8 +317,37 @@ mgen ns f = case ns of
 onMatrix :: (Matrix ms a -> Matrix ns b) -> M ms a -> M ns b
 onMatrix f = M . f . getMatrix
 
+asM :: (M ms a -> M ns a) -> Matrix ms a -> Matrix ns a
+asM f = getMatrix . f . M
+
 diagonal :: VecT n (VecT n f) a -> VecT n f a
 diagonal = imap index
+
+mIndex :: Prod Fin ns -> M ns a -> a
+mIndex = \case
+  i :< is -> mIndex is . onMatrix (index i)
+  Ø       -> getI . getMatrix
+
+mUpdateAt :: Prod Fin ns -> (a -> a) -> M ns a -> M ns a
+mUpdateAt = \case
+  n :< ns -> onMatrix . vUpdateAt n . asM . mUpdateAt ns
+  Ø       -> onMatrix . fmap
+
+mSetAt :: Prod Fin ns -> a -> M ns a -> M ns a
+mSetAt ns = mUpdateAt ns . const
+
+updateSubmatrix
+  :: (ns ~ Fsts3 nlms, ms ~ Thds3 nlms)
+  => Prod (Uncur3 Range) nlms -> (Prod Fin ms -> a -> a) -> M ns a -> M ns a
+updateSubmatrix = \case
+  Ø              -> \f -> onMatrix (f Ø <$>)
+  Uncur3 r :< rs -> \f -> onMatrix . updateRange r $ \i ->
+    asM . updateSubmatrix rs $ f . (i :<)
+
+setSubmatrix
+  :: (ns ~ Fsts3 nlms, ms ~ Thds3 nlms)
+  => Prod (Uncur3 Range) nlms -> M ms a -> M ns a -> M ns a
+setSubmatrix rs sm = updateSubmatrix rs $ \is _ -> mIndex is sm
 
 vtranspose :: Known Nat n => VecT m (VecT n f) a -> VecT n (VecT m f) a
 vtranspose v = vgen_ $ \x -> vmap (index x) v
