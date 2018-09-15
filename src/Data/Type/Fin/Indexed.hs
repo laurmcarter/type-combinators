@@ -34,7 +34,7 @@ module Data.Type.Fin.Indexed where
 
 import Data.Type.Nat
 import Type.Class.Higher
--- import Type.Class.Known
+import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
@@ -93,6 +93,11 @@ ifinNat = \case
   IFZ   -> Z_
   IFS n -> S_ $ ifinNat n
 
+deIndex :: IFin n m -> Fin n
+deIndex = \case
+  IFS n -> FS (deIndex n)
+  IFZ   -> FZ
+
 ifinVal :: IFin x y -> Int
 ifinVal = natVal . ifinNat
 
@@ -122,6 +127,13 @@ instance (x' ~ Pred x) => Witness ØC (S x' ~ x) (IFin x y) where
   (\\) r = \case
     IFZ   -> r
     IFS _ -> r
+
+instance Known (IFin (S n)) Z where
+  known = IFZ
+
+instance Known (IFin n) m => Known (IFin (S n)) (S m) where
+  type KnownC (IFin (S n)) (S m) = Known (IFin n) m
+  known = IFS known
 
 {-
 elimFin :: (forall x. p (S x))
