@@ -12,6 +12,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-- GHC 8.6.1 compatibility
+{-# LANGUAGE CPP #-}
+#if MIN_VERSION_base(4, 12, 0)
+{-# LANGUAGE NoStarIsType #-}  
+#endif
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Type.Nat
@@ -27,18 +33,16 @@
 -----------------------------------------------------------------------------
 
 module Data.Type.Nat where
-
+import Data.Kind(Type)
 import Data.Type.Boolean
 import Data.Type.Equality
--- import Data.Type.Quantifier
 import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
--- import Type.Class.Categories
 
-data Nat :: N -> * where
+data Nat :: N -> Type where
   Z_ :: Nat Z
   S_ :: !(Nat n) -> Nat (S n)
 
