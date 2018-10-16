@@ -13,6 +13,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+-- GHC 8.6.1 compatibility
+{-# LANGUAGE CPP #-}
+#if MIN_VERSION_base(4, 12, 0)
+{-# LANGUAGE NoStarIsType #-}  
+#endif
+
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Type.Family.Nat
@@ -30,11 +37,13 @@
 
 module Type.Family.Nat where
 
+import Data.Kind(Type)
 import Data.Type.Equality
 import Type.Family.Bool
 import Type.Family.Constraint
 import Type.Family.List
 import Type.Class.Witness
+
 
 data N
   = Z
@@ -81,7 +90,7 @@ type family (x :: N) + (y :: N) :: N where
   S x + y = S (x + y)
 infixr 6 +
 
-data AddW (f :: N -> *) :: N -> * where
+data AddW (f :: N -> Type) :: N -> Type where
   AddW :: !(f x)
        -> !(f y)
        -> AddW f (x + y)
@@ -94,7 +103,7 @@ type family (x :: N) * (y :: N) :: N where
   S x * y = (x * y) + y
 infixr 7 *
 
-data MulW (f :: N -> *) :: N -> * where
+data MulW (f :: N -> Type) :: N -> Type where
   MulW :: !(f x)
        -> !(f y)
        -> MulW f (x * y)
